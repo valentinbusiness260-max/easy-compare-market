@@ -34,8 +34,9 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 
-// Initialisation Stripe en mode test
-const stripePromise = loadStripe("pk_test_TYooMQauvdEDq54NiTphI7jx");
+// Uses Environment Variable if available, fallback to test key for demo
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || "pk_test_TYooMQauvdEDq54NiTphI7jx";
+const stripePromise = loadStripe(stripeKey);
 
 /* ═══════════════════ DESIGN TOKENS ═══════════════════ */
 const BLUE = "#1568C0";
@@ -45,57 +46,57 @@ const PAPER = "#F7F6F2";
 
 /* ═══════════════════ STATIC DATA ═══════════════════ */
 const CATEGORIES = [
-  { id: "eau", label: "Eau", icon: Droplet, color: "#1568C0", bg: "#E6F1FB", active: true },
-  { id: "epicerie", label: "Épicerie", icon: ShoppingBag, color: "#D85A30", bg: "#FAECE7", active: true },
-  { id: "maison", label: "Maison", icon: Sparkles, color: "#0F6E56", bg: "#E1F5EE", active: true },
-  { id: "tech", label: "High-tech", icon: Smartphone, color: "#854F0B", bg: "#FAEEDA", active: true },
-  { id: "bebe", label: "Bébé", icon: Baby, color: "#993556", bg: "#FBEAF0", active: true },
-  { id: "tout", label: "Tout voir", icon: Grid3x3, color: "#534AB7", bg: "#EEEDFE", active: true },
+  { id: "water", label: "Water", icon: Droplet, color: "#1568C0", bg: "#E6F1FB", active: true },
+  { id: "grocery", label: "Grocery", icon: ShoppingBag, color: "#D85A30", bg: "#FAECE7", active: true },
+  { id: "home", label: "Home", icon: Sparkles, color: "#0F6E56", bg: "#E1F5EE", active: true },
+  { id: "tech", label: "Tech", icon: Smartphone, color: "#854F0B", bg: "#FAEEDA", active: true },
+  { id: "baby", label: "Baby", icon: Baby, color: "#993556", bg: "#FBEAF0", active: true },
+  { id: "all", label: "See All", icon: Grid3x3, color: "#534AB7", bg: "#EEEDFE", active: true },
 ];
 
 const LOCAL_PRODUCTS = [
-  // Eau
+  // Water
   {
-    id: "masafi-500", category: "eau", name: "Masafi eau 500ml x12", brand: "Masafi",
+    id: "masafi-500", category: "water", name: "Masafi Water 500ml x12", brand: "Masafi",
     trend: [58, 62, 60, 68, 50, 40, 32], prices: { Carrefour: 10.5, "Amazon.ae": 13.9, Lulu: 14.25 },
     oldPrice: 16.5, promo: "FLASH", image_url: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=200&h=200&fit=crop"
   },
   {
-    id: "alain-1500", category: "eau", name: "Al Ain eau 1.5L x6", brand: "Al Ain",
+    id: "alain-1500", category: "water", name: "Al Ain Water 1.5L x6", brand: "Al Ain",
     trend: [40, 45, 42, 50, 48, 44, 38], prices: { "Amazon.ae": 12.6, Carrefour: 15.2, Lulu: 15.9 },
     oldPrice: 18.0, promo: "-30%", image_url: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=200&h=200&fit=crop"
   },
-  // Epicerie
+  // Grocery
   {
-    id: "riz-basmati", category: "epicerie", name: "Riz Basmati Tilda 5kg", brand: "Tilda",
+    id: "basmati-rice", category: "grocery", name: "Tilda Basmati Rice 5kg", brand: "Tilda",
     trend: [150, 145, 148, 140, 130, 125, 120], prices: { Lulu: 45.5, Carrefour: 52.0, "Amazon.ae": 50.0 },
     oldPrice: 65.0, promo: "HOT DEAL", image_url: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=200&h=200&fit=crop"
   },
   {
-    id: "nutella-750", category: "epicerie", name: "Nutella Pâte à tartiner 750g", brand: "Nutella",
+    id: "nutella-750", category: "grocery", name: "Nutella Chocolate Spread 750g", brand: "Nutella",
     trend: [80, 82, 75, 70, 72, 65, 60], prices: { Carrefour: 22.5, "Amazon.ae": 24.0, Lulu: 26.5 },
     oldPrice: 32.0, promo: "-25%", image_url: "https://images.unsplash.com/photo-1588661668264-a032890fc2f1?w=200&h=200&fit=crop"
   },
-  // Maison
+  // Home
   {
-    id: "fairy-lemon", category: "maison", name: "Fairy Liquide Vaisselle Citron 1L", brand: "Fairy",
+    id: "fairy-lemon", category: "home", name: "Fairy Dishwashing Liquid 1L", brand: "Fairy",
     trend: [30, 28, 25, 22, 20, 18, 15], prices: { "Amazon.ae": 12.0, Carrefour: 14.5, Lulu: 15.0 },
     oldPrice: 19.5, promo: "-40%", image_url: "https://images.unsplash.com/photo-1585233157597-9e776e0e3b97?w=200&h=200&fit=crop"
   },
   {
-    id: "tide-pods", category: "maison", name: "Tide Pods 3 en 1, 30 capsules", brand: "Tide",
+    id: "tide-pods", category: "home", name: "Tide Pods 3-in-1, 30 Count", brand: "Tide",
     trend: [90, 85, 80, 75, 70, 65, 60], prices: { Carrefour: 40.0, Lulu: 45.0, "Amazon.ae": 48.0 },
     oldPrice: 60.0, promo: "FLASH", image_url: "https://images.unsplash.com/photo-1585233157597-9e776e0e3b97?w=200&h=200&fit=crop"
   },
   // Tech
   {
-    id: "airpods-pro", category: "tech", name: "AirPods Pro (2e gén)", brand: "Apple",
+    id: "airpods-pro", category: "tech", name: "AirPods Pro (2nd Gen)", brand: "Apple",
     trend: [950, 920, 900, 880, 850, 820, 790], prices: { "Amazon.ae": 750.0, Carrefour: 799.0, Lulu: 820.0 },
     oldPrice: 999.0, promo: "-25%", image_url: "https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?w=200&h=200&fit=crop"
   },
-  // Bebe
+  // Baby
   {
-    id: "pampers-premium", category: "bebe", name: "Pampers Premium Care, Taille 4", brand: "Pampers",
+    id: "pampers-premium", category: "baby", name: "Pampers Premium Care, Size 4", brand: "Pampers",
     trend: [110, 105, 100, 95, 90, 85, 80], prices: { Lulu: 65.0, Carrefour: 70.0, "Amazon.ae": 72.0 },
     oldPrice: 95.0, promo: "HOT DEAL", image_url: "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=200&h=200&fit=crop"
   }
@@ -204,7 +205,7 @@ function useProductSearch(query, debounceMs = 400) {
           .map((p) => ({
             id: p.code || Math.random().toString(36).slice(2),
             name: p.product_name,
-            brand: p.brands || "Marque inconnue",
+            brand: p.brands || "Unknown brand",
             image_url: p.image_small_url || null,
             quantity: p.quantity || "",
             prices: generatePrices(p.code || p.product_name),
@@ -255,7 +256,7 @@ function AppShell({ children, footer, isMobile }) {
           style={{
             flex: 1,
             overflowY: "auto",
-            padding: `calc(14px + var(--safe-top, 0px)) calc(16px + var(--safe-right, 0px)) 8px calc(16px + var(--safe-left, 0px))`,
+            padding: `calc(14px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 8px calc(16px + env(safe-area-inset-left))`,
           }}
         >
           {children}
@@ -268,8 +269,8 @@ function AppShell({ children, footer, isMobile }) {
   return (
     <div
       style={{
-        width: 340,
-        height: 660,
+        width: 360,
+        height: 700,
         background: "#fff",
         borderRadius: 34,
         border: `8px solid ${INK}`,
@@ -293,14 +294,14 @@ function TopBar({ title, onBack, shareable = false }) {
       try {
         await navigator.share({
           title: 'Easy Compare Market',
-          text: 'Regarde cette app incroyable pour comparer les prix et faire des économies ! 💸',
+          text: 'Check out this amazing app to compare prices and save money! 💸',
           url: window.location.href,
         });
       } catch (err) {
         console.error("Share failed", err);
       }
     } else {
-      alert("Partage non supporté sur ce navigateur. Copiez le lien !");
+      alert("Sharing not supported on this browser. Copy the link instead!");
     }
   };
 
@@ -309,16 +310,17 @@ function TopBar({ title, onBack, shareable = false }) {
       {onBack && (
         <button
           onClick={onBack}
+          className="ecm-btn-bounce"
           style={{ background: "none", border: "none", padding: 4, cursor: "pointer", color: INK }}
         >
-          <ChevronLeft size={20} />
+          <ChevronLeft size={24} />
         </button>
       )}
       {!onBack && (
         <div
           style={{
-            width: 26,
-            height: 26,
+            width: 28,
+            height: 28,
             borderRadius: 8,
             background: BLUE,
             display: "flex",
@@ -330,18 +332,18 @@ function TopBar({ title, onBack, shareable = false }) {
           <ShoppingBag size={14} color="#fff" />
         </div>
       )}
-      <span style={{ fontWeight: 600, fontSize: 14, letterSpacing: -0.2, flex: 1 }}>{title || "Easy Compare Market"}</span>
+      <span style={{ fontWeight: 700, fontSize: 16, letterSpacing: -0.2, flex: 1 }}>{title || "Easy Compare Market"}</span>
       
       {shareable && (
         <button
           onClick={handleShare}
-          className="ecm-pulse"
+          className="ecm-pulse ecm-btn-bounce"
           style={{
             background: "#E6F1FB",
             border: "none",
             borderRadius: "50%",
-            width: 32,
-            height: 32,
+            width: 36,
+            height: 36,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -349,7 +351,7 @@ function TopBar({ title, onBack, shareable = false }) {
             cursor: "pointer",
           }}
         >
-          <Share2 size={16} />
+          <Share2 size={18} />
         </button>
       )}
     </div>
@@ -370,8 +372,8 @@ function Pill({ children, tone = "neutral" }) {
         background: t.bg,
         color: t.fg,
         fontSize: 11,
-        fontWeight: 600,
-        padding: "3px 9px",
+        fontWeight: 700,
+        padding: "4px 10px",
         borderRadius: 20,
         display: "inline-block",
       }}
@@ -383,10 +385,10 @@ function Pill({ children, tone = "neutral" }) {
 
 function BottomNav({ screen, setScreen, isMobile }) {
   const items = [
-    { id: "home", icon: Home, label: "Accueil" },
-    { id: "search", icon: Search, label: "Recherche" },
-    { id: "alerts", icon: Bell, label: "Alertes" },
-    { id: "profile", icon: User, label: "Profil" },
+    { id: "home", icon: Home, label: "Home" },
+    { id: "search", icon: Search, label: "Search" },
+    { id: "alerts", icon: Bell, label: "Alerts" },
+    { id: "profile", icon: User, label: "Profile" },
   ];
   return (
     <div
@@ -394,7 +396,7 @@ function BottomNav({ screen, setScreen, isMobile }) {
         display: "flex",
         borderTop: "1px solid #ECEAE3",
         padding: isMobile
-          ? `10px 6px calc(14px + var(--safe-bottom, 0px))`
+          ? `10px 6px calc(14px + env(safe-area-inset-bottom))`
           : "10px 6px 14px",
         background: "#fff",
         position: "relative",
@@ -407,6 +409,7 @@ function BottomNav({ screen, setScreen, isMobile }) {
           <button
             key={it.id}
             onClick={() => setScreen(it.id)}
+            className="ecm-btn-bounce"
             style={{
               flex: 1,
               background: "none",
@@ -415,15 +418,13 @@ function BottomNav({ screen, setScreen, isMobile }) {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-              gap: 3,
+              gap: 4,
               color: active ? BLUE : "#9B9A93",
-              fontSize: 10,
-              fontWeight: 600,
-              transition: "color 0.2s, transform 0.2s",
-              transform: active ? "scale(1.05)" : "scale(1)"
+              fontSize: 11,
+              fontWeight: 700,
             }}
           >
-            <Icon size={19} strokeWidth={active ? 2.4 : 1.8} />
+            <Icon size={22} strokeWidth={active ? 2.4 : 1.8} />
             {it.label}
           </button>
         );
@@ -441,7 +442,7 @@ function ProductImage({ src, size = 40, style = {} }) {
         style={{
           width: size,
           height: size,
-          borderRadius: 10,
+          borderRadius: 12,
           background: "#E6F1FB",
           display: "flex",
           alignItems: "center",
@@ -463,7 +464,7 @@ function ProductImage({ src, size = 40, style = {} }) {
       style={{
         width: size,
         height: size,
-        borderRadius: 10,
+        borderRadius: 12,
         objectFit: "cover",
         flexShrink: 0,
         background: "#F0EFEA",
@@ -486,6 +487,7 @@ function SubscriptionScreen({ goBack, email }) {
     if (!stripe || !elements) return;
 
     setLoading(true);
+    // Real deployment will call an endpoint, this simulates it
     setTimeout(() => {
       setLoading(false);
       setSuccess(true);
@@ -495,30 +497,32 @@ function SubscriptionScreen({ goBack, email }) {
   if (success) {
     return (
       <div className="ecm-fade-up" style={{ textAlign: "center", padding: "40px 12px" }}>
-        <TopBar title="Abonnement Confirmé" onBack={goBack} />
+        <TopBar title="Subscription Confirmed" onBack={goBack} />
         <div className="ecm-scale-pop" style={{ marginTop: 40, marginBottom: 20 }}>
           <Check size={64} color="#3B6D11" style={{ background: "#EAF3DE", borderRadius: "50%", padding: 12 }} />
         </div>
-        <h2 style={{ margin: "0 0 8px", fontSize: 24, fontWeight: 800 }}>Paiement Réussi ! 🎉</h2>
+        <h2 style={{ margin: "0 0 8px", fontSize: 24, fontWeight: 800 }}>Payment Successful! 🎉</h2>
         <p style={{ color: "#5F5E5A", fontSize: 14, lineHeight: 1.5 }}>
-          Félicitations, tu es maintenant Premium ! Un reçu a été envoyé à <strong>{email}</strong>.
+          Congratulations, you are now Premium! A receipt has been sent to <strong>{email}</strong>.
         </p>
         <button
           onClick={goBack}
+          className="ecm-btn-bounce"
           style={{
             background: BLUE,
             color: "#fff",
             border: "none",
-            borderRadius: 12,
-            padding: "14px 24px",
-            fontSize: 14,
-            fontWeight: 700,
+            borderRadius: 14,
+            padding: "16px 24px",
+            fontSize: 15,
+            fontWeight: 800,
             cursor: "pointer",
             marginTop: 30,
-            width: "100%"
+            width: "100%",
+            boxShadow: "0 10px 20px rgba(21, 104, 192, 0.2)"
           }}
         >
-          Retour à l'accueil
+          Back to Home
         </button>
       </div>
     );
@@ -526,31 +530,31 @@ function SubscriptionScreen({ goBack, email }) {
 
   return (
     <div className="ecm-fade-up">
-      <TopBar title="Abonnement Premium" onBack={goBack} />
+      <TopBar title="Premium Subscription" onBack={goBack} />
       
       <div className="ecm-plan-card recommended ecm-pulse" style={{ marginBottom: 20, marginTop: 15 }}>
-        <h3 style={{ margin: "10px 0 5px", color: BLUE_DARK, fontSize: 18, fontWeight: 800 }}>Plan VIP Premium</h3>
+        <h3 style={{ margin: "10px 0 5px", color: BLUE_DARK, fontSize: 18, fontWeight: 800 }}>VIP Premium Plan</h3>
         <div style={{ fontSize: 32, fontWeight: 800, margin: "10px 0", color: INK }}>
-          14.99 <span style={{fontSize: 14, fontWeight: 600, color: "#5F5E5A"}}>AED / mois</span>
+          14.99 <span style={{fontSize: 14, fontWeight: 600, color: "#5F5E5A"}}>AED / month</span>
         </div>
         <ul style={{ listStyle: "none", padding: 0, margin: "20px 0 10px", textAlign: "left", fontSize: 13, display: "flex", flexDirection: "column", gap: 12 }}>
           <li style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <div style={{ background: "#EAF3DE", padding: 4, borderRadius: "50%", color: "#3B6D11" }}><Check size={14} /></div>
-            Comparaison des prix en temps réel
+            Real-time price comparison
           </li>
           <li style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <div style={{ background: "#EAF3DE", padding: 4, borderRadius: "50%", color: "#3B6D11" }}><Check size={14} /></div>
-            Accès à +10,000 produits exclusifs
+            Access to +10,000 exclusive products
           </li>
           <li style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <div style={{ background: "#EAF3DE", padding: 4, borderRadius: "50%", color: "#3B6D11" }}><Check size={14} /></div>
-            Alertes de baisse de prix instantanées
+            Instant price drop alerts
           </li>
         </ul>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 15 }}>
-        <div style={{ padding: "16px 12px", border: "1px solid #ECEAE3", borderRadius: 12, background: "#FAFAFA" }}>
+        <div style={{ padding: "16px 12px", border: "1px solid #ECEAE3", borderRadius: 14, background: "#FAFAFA" }}>
           <CardElement options={{
             style: {
               base: {
@@ -568,12 +572,12 @@ function SubscriptionScreen({ goBack, email }) {
         <button
           disabled={!stripe || loading}
           type="submit"
-          className={loading ? "" : "ecm-pulse"}
+          className={loading ? "" : "ecm-pulse ecm-btn-bounce"}
           style={{
             background: BLUE,
             color: "#fff",
             border: "none",
-            borderRadius: 12,
+            borderRadius: 14,
             padding: 16,
             fontSize: 15,
             fontWeight: 800,
@@ -586,10 +590,10 @@ function SubscriptionScreen({ goBack, email }) {
             boxShadow: "0 10px 20px rgba(21, 104, 192, 0.2)"
           }}
         >
-          {loading ? "Traitement sécurisé..." : "Activer mon compte Premium"}
+          {loading ? "Processing Securely..." : "Activate Premium Account"}
         </button>
-        <p style={{ fontSize: 11, color: "#9B9A93", textAlign: "center", margin: 0 }}>
-          Paiement sécurisé crypté 256-bit
+        <p style={{ fontSize: 12, color: "#9B9A93", textAlign: "center", margin: 0, fontWeight: 500 }}>
+          🔒 256-bit Encrypted Secure Payment
         </p>
       </form>
     </div>
@@ -601,13 +605,13 @@ function HomeScreen({ goSearch, goDetail, activeCategory, setActiveCategory }) {
     <div>
       <TopBar shareable={true} />
       
-      {/* Banner Viral */}
+      {/* Viral Banner */}
       <div
         className="ecm-gradient-animated"
         style={{
-          borderRadius: 18,
-          padding: "20px 18px",
-          marginBottom: 16,
+          borderRadius: 20,
+          padding: "24px 20px",
+          marginBottom: 20,
           color: "#fff",
           position: "relative",
           overflow: "hidden",
@@ -615,9 +619,9 @@ function HomeScreen({ goSearch, goDetail, activeCategory, setActiveCategory }) {
         }}
       >
         <div style={{ position: "relative", zIndex: 2 }}>
-          <p style={{ fontSize: 13, opacity: 0.9, margin: "0 0 4px", fontWeight: 500 }}>Bonjour 👋</p>
-          <p style={{ fontSize: 18, fontWeight: 800, margin: "0 0 12px", letterSpacing: -0.3, lineHeight: 1.2 }}>
-            Fais des économies sur tes achats quotidiens.
+          <p style={{ fontSize: 14, opacity: 0.9, margin: "0 0 6px", fontWeight: 600 }}>Hello 👋</p>
+          <p style={{ fontSize: 20, fontWeight: 800, margin: "0 0 16px", letterSpacing: -0.3, lineHeight: 1.2 }}>
+            Save money on your daily purchases.
           </p>
           <div
             className="ecm-bounce-in"
@@ -627,112 +631,105 @@ function HomeScreen({ goSearch, goDetail, activeCategory, setActiveCategory }) {
               gap: 6,
               background: "#E53935",
               color: "#fff",
-              padding: "6px 12px",
-              borderRadius: 20,
-              fontSize: 11,
+              padding: "8px 14px",
+              borderRadius: 24,
+              fontSize: 12,
               fontWeight: 800,
               boxShadow: "0 4px 12px rgba(229,57,53,0.4)"
             }}
           >
-            <Clock size={14} /> VENTE FLASH : -50% AUJOURD'HUI
+            <Clock size={16} /> FLASH SALE: UP TO -50% TODAY
           </div>
         </div>
       </div>
 
       <button
         onClick={goSearch}
+        className="ecm-btn-bounce"
         style={{
           width: "100%",
           display: "flex",
           alignItems: "center",
-          gap: 8,
+          gap: 10,
           background: PAPER,
-          border: "1px solid #ECEAE3",
-          borderRadius: 14,
-          padding: "14px 16px",
-          marginBottom: 20,
+          border: "2px solid #ECEAE3",
+          borderRadius: 16,
+          padding: "16px",
+          marginBottom: 24,
           cursor: "pointer",
           textAlign: "left",
-          transition: "transform 0.2s, box-shadow 0.2s",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.transform = "translateY(-1px)";
-          e.currentTarget.style.boxShadow = "0 6px 15px rgba(0,0,0,0.05)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.transform = "translateY(0)";
-          e.currentTarget.style.boxShadow = "none";
+          boxShadow: "0 6px 15px rgba(0,0,0,0.02)"
         }}
       >
-        <Search size={18} color="#9B9A93" />
-        <span style={{ fontSize: 14, color: "#9B9A93", flex: 1, fontWeight: 500 }}>Rechercher un produit...</span>
-        <ScanLine size={18} color={BLUE} />
+        <Search size={20} color="#9B9A93" />
+        <span style={{ fontSize: 15, color: "#9B9A93", flex: 1, fontWeight: 600 }}>Search a product...</span>
+        <ScanLine size={20} color={BLUE} />
       </button>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 12 }}>
-        <p style={{ fontSize: 15, fontWeight: 800, margin: 0 }}>Catégories</p>
-        <span style={{ fontSize: 11, color: BLUE, fontWeight: 600 }}>Voir tout</span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
+        <p style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>Categories</p>
+        <span style={{ fontSize: 12, color: BLUE, fontWeight: 700 }}>See all</span>
       </div>
       
-      <div className="ecm-h-scroll" style={{ marginBottom: 20, paddingBottom: 8 }}>
+      <div className="ecm-h-scroll" style={{ marginBottom: 24, paddingBottom: 10 }}>
         {CATEGORIES.map((c) => {
           const Icon = c.icon;
-          const isActive = activeCategory === c.id || (activeCategory === 'tout' && c.id === 'tout');
+          const isActive = activeCategory === c.id || (activeCategory === 'all' && c.id === 'all');
           return (
             <button
               key={c.id}
               onClick={() => setActiveCategory(c.id)}
+              className="ecm-btn-bounce"
               style={{
                 background: isActive ? c.color : c.bg,
                 color: isActive ? "#fff" : c.color,
                 border: "none",
-                borderRadius: 16,
-                padding: "12px 16px",
+                borderRadius: 18,
+                padding: "14px 18px",
                 textAlign: "center",
                 cursor: "pointer",
-                transition: "all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                minWidth: 76,
+                minWidth: 80,
                 transform: isActive ? "scale(1.05)" : "scale(1)",
                 boxShadow: isActive ? `0 8px 20px ${c.color}40` : "none"
               }}
             >
-              <Icon size={22} />
-              <p style={{ fontSize: 11, fontWeight: 700, margin: "8px 0 0" }}>{c.label}</p>
+              <Icon size={24} />
+              <p style={{ fontSize: 12, fontWeight: 800, margin: "10px 0 0" }}>{c.label}</p>
             </button>
           );
         })}
       </div>
 
-      <p style={{ fontSize: 15, fontWeight: 800, margin: "0 0 12px" }}>Top Promotions 🔥</p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {LOCAL_PRODUCTS.filter(p => activeCategory === 'tout' || p.category === activeCategory).map((p, idx) => {
+      <p style={{ fontSize: 16, fontWeight: 800, margin: "0 0 16px" }}>Top Deals 🔥</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {LOCAL_PRODUCTS.filter(p => activeCategory === 'all' || p.category === activeCategory).map((p, idx) => {
           const [retailer, price] = cheapest(p.prices);
           return (
             <button
               key={p.id}
-              className="ecm-card ecm-fade-up"
+              className="ecm-card ecm-fade-up ecm-btn-bounce"
               onClick={() => goDetail(p)}
               style={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                padding: "12px",
+                padding: "14px",
                 cursor: "pointer",
                 textAlign: "left",
                 animationDelay: `${idx * 0.05}s`
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
-                <ProductImage src={p.image_url} size={56} style={{ border: "1px solid #ECEAE3" }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0 }}>
+                <ProductImage src={p.image_url} size={60} style={{ border: "1px solid #ECEAE3" }} />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <p
                     style={{
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: 700,
-                      margin: "0 0 2px",
+                      margin: "0 0 4px",
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
@@ -741,24 +738,24 @@ function HomeScreen({ goSearch, goDetail, activeCategory, setActiveCategory }) {
                   >
                     {p.name}
                   </p>
-                  <p style={{ fontSize: 11, color: "#9B9A93", margin: "0 0 6px" }}>
+                  <p style={{ fontSize: 12, color: "#9B9A93", margin: "0 0 8px", fontWeight: 500 }}>
                     {p.brand}
                   </p>
                   {p.promo && <span className="ecm-promo-badge" style={{ background: "#FFF0F0", color: "#E53935" }}>{p.promo}</span>}
                 </div>
               </div>
-              <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 8 }}>
-                {p.oldPrice && <p className="ecm-old-price" style={{ margin: "0 0 2px" }}>{p.oldPrice.toFixed(2)} AED</p>}
-                <p style={{ fontSize: 16, fontWeight: 800, margin: 0, color: "#E53935" }}>
+              <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 10 }}>
+                {p.oldPrice && <p className="ecm-old-price" style={{ margin: "0 0 4px" }}>{p.oldPrice.toFixed(2)} AED</p>}
+                <p style={{ fontSize: 18, fontWeight: 800, margin: 0, color: "#E53935" }}>
                   {price.toFixed(2)}
                 </p>
-                <p style={{ fontSize: 9, color: "#5F5E5A", margin: "2px 0 0", fontWeight: 600 }}>chez {retailer}</p>
+                <p style={{ fontSize: 10, color: "#5F5E5A", margin: "4px 0 0", fontWeight: 700 }}>at {retailer}</p>
               </div>
             </button>
           );
         })}
-        {LOCAL_PRODUCTS.filter(p => activeCategory === 'tout' || p.category === activeCategory).length === 0 && (
-          <p style={{ fontSize: 13, color: "#9B9A93", textAlign: "center", padding: "20px 0" }}>Aucune promotion dans cette catégorie pour le moment.</p>
+        {LOCAL_PRODUCTS.filter(p => activeCategory === 'all' || p.category === activeCategory).length === 0 && (
+          <p style={{ fontSize: 14, color: "#9B9A93", textAlign: "center", padding: "30px 0", fontWeight: 500 }}>No promotions in this category at the moment.</p>
         )}
       </div>
     </div>
@@ -773,70 +770,70 @@ function SearchScreen({ goBack, goDetail }) {
 
   return (
     <div>
-      <TopBar title="Rechercher" onBack={goBack} />
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          marginBottom: 10,
-          padding: "6px 10px",
-          borderRadius: 8,
-          background: isOnline ? "#EAF3DE" : "#FAECE7",
-          fontSize: 11,
-          fontWeight: 700,
-          color: isOnline ? "#3B6D11" : "#D85A30",
-        }}
-      >
-        {isOnline ? <Wifi size={14} /> : <WifiOff size={14} />}
-        {isOnline ? "Connecté : 10M+ produits dispos" : "Hors ligne : base restreinte"}
-      </div>
+      <TopBar title="Search" onBack={goBack} />
 
       <div
         style={{
           display: "flex",
           alignItems: "center",
           gap: 8,
+          marginBottom: 12,
+          padding: "8px 12px",
+          borderRadius: 10,
+          background: isOnline ? "#EAF3DE" : "#FAECE7",
+          fontSize: 12,
+          fontWeight: 700,
+          color: isOnline ? "#3B6D11" : "#D85A30",
+        }}
+      >
+        {isOnline ? <Wifi size={16} /> : <WifiOff size={16} />}
+        {isOnline ? "Online: 10M+ products available" : "Offline: Local products only"}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
           background: PAPER,
           border: `2px solid ${query.length > 0 ? BLUE : "#ECEAE3"}`,
-          borderRadius: 14,
-          padding: "12px 14px",
-          marginBottom: 10,
+          borderRadius: 16,
+          padding: "14px 16px",
+          marginBottom: 16,
           transition: "border-color 0.2s, box-shadow 0.2s",
           boxShadow: query.length > 0 ? "0 4px 15px rgba(21, 104, 192, 0.1)" : "none"
         }}
       >
-        <Search size={18} color="#9B9A93" />
+        <Search size={20} color="#9B9A93" />
         <input
           autoFocus
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Ex: eau, riz, lait..."
+          placeholder="Ex: water, rice, milk..."
           style={{
             border: "none",
             outline: "none",
             background: "transparent",
-            fontSize: 14,
-            fontWeight: 500,
+            fontSize: 15,
+            fontWeight: 600,
             flex: 1,
             fontFamily: "inherit",
             color: INK,
           }}
         />
         {loading ? (
-          <div className="ecm-spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
+          <div className="ecm-spinner" style={{ width: 20, height: 20, borderWidth: 3 }} />
         ) : (
-          <ScanLine size={18} color={BLUE} />
+          <ScanLine size={20} color={BLUE} />
         )}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {loading && (
            <>
-             <div className="ecm-skeleton" style={{ height: 72, width: "100%", marginBottom: 4 }}></div>
-             <div className="ecm-skeleton" style={{ height: 72, width: "100%", marginBottom: 4 }}></div>
-             <div className="ecm-skeleton" style={{ height: 72, width: "100%" }}></div>
+             <div className="ecm-skeleton" style={{ height: 80, width: "100%", marginBottom: 6 }}></div>
+             <div className="ecm-skeleton" style={{ height: 80, width: "100%", marginBottom: 6 }}></div>
+             <div className="ecm-skeleton" style={{ height: 80, width: "100%" }}></div>
            </>
         )}
         {!loading && displayProducts.map((p, idx) => {
@@ -844,24 +841,24 @@ function SearchScreen({ goBack, goDetail }) {
           return (
             <button
               key={p.id || idx}
-              className="ecm-card ecm-fade-up"
+              className="ecm-card ecm-fade-up ecm-btn-bounce"
               onClick={() => goDetail(p)}
               style={{
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                padding: "12px",
+                padding: "14px",
                 cursor: "pointer",
                 textAlign: "left",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
-                <ProductImage src={p.image_url} size={44} style={{ border: "1px solid #ECEAE3" }} />
+              <div style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0 }}>
+                <ProductImage src={p.image_url} size={48} style={{ border: "1px solid #ECEAE3" }} />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <p
                     style={{
-                      fontSize: 14,
-                      fontWeight: 600,
+                      fontSize: 15,
+                      fontWeight: 700,
                       margin: 0,
                       whiteSpace: "nowrap",
                       overflow: "hidden",
@@ -870,28 +867,28 @@ function SearchScreen({ goBack, goDetail }) {
                   >
                     {p.name}
                   </p>
-                  <p style={{ fontSize: 11, color: "#9B9A93", margin: "2px 0 0" }}>
+                  <p style={{ fontSize: 12, color: "#9B9A93", margin: "4px 0 0", fontWeight: 500 }}>
                     {p.brand}
                     {p.quantity ? ` · ${p.quantity}` : ""}
                   </p>
                 </div>
               </div>
-              <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 8 }}>
-                <p style={{ fontSize: 15, fontWeight: 800, margin: 0, color: BLUE_DARK }}>
+              <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 10 }}>
+                <p style={{ fontSize: 16, fontWeight: 800, margin: 0, color: BLUE_DARK }}>
                   {price.toFixed(2)}
                 </p>
-                <p style={{ fontSize: 9, color: "#5F5E5A", margin: "2px 0 0" }}>chez {retailer}</p>
+                <p style={{ fontSize: 10, color: "#5F5E5A", margin: "4px 0 0", fontWeight: 600 }}>at {retailer}</p>
               </div>
             </button>
           );
         })}
 
         {!loading && query.length >= 2 && displayProducts.length === 0 && (
-          <div className="ecm-fade-up" style={{ textAlign: "center", padding: "40px 12px" }}>
-            <Search size={32} color="#C9C7BC" style={{ marginBottom: 12 }} />
-            <p style={{ fontSize: 15, fontWeight: 700, margin: "0 0 6px" }}>Aucun produit trouvé</p>
-            <p style={{ fontSize: 12, color: "#9B9A93", margin: 0 }}>
-              Nous ne trouvons pas ce produit, essayez un synonyme !
+          <div className="ecm-fade-up" style={{ textAlign: "center", padding: "50px 16px" }}>
+            <Search size={36} color="#C9C7BC" style={{ marginBottom: 16 }} />
+            <p style={{ fontSize: 16, fontWeight: 800, margin: "0 0 8px" }}>No products found</p>
+            <p style={{ fontSize: 13, color: "#9B9A93", margin: 0, fontWeight: 500 }}>
+              We couldn't find this item, try a different keyword!
             </p>
           </div>
         )}
@@ -918,9 +915,9 @@ function DetailScreen({ product, goBack }) {
       <div
         style={{
           background: "linear-gradient(135deg, #F7F6F2, #E6F1FB)",
-          borderRadius: 20,
-          padding: 24,
-          marginBottom: 16,
+          borderRadius: 22,
+          padding: 28,
+          marginBottom: 20,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -928,24 +925,24 @@ function DetailScreen({ product, goBack }) {
           boxShadow: "inset 0 2px 10px rgba(0,0,0,0.02)"
         }}
       >
-        <div style={{ position: "absolute", top: 12, left: 12, background: "#FFF0F0", color: "#E53935", padding: "4px 8px", borderRadius: 20, fontSize: 10, fontWeight: 800, display: "flex", alignItems: "center", gap: 4 }}>
-          <Flame size={12} /> {viewers} personnes regardent
+        <div style={{ position: "absolute", top: 14, left: 14, background: "#FFF0F0", color: "#E53935", padding: "6px 12px", borderRadius: 20, fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}>
+          <Flame size={14} /> {viewers} people are viewing
         </div>
         {product.image_url ? (
-          <ProductImage src={product.image_url} size={140} style={{ borderRadius: 16, boxShadow: "0 15px 35px rgba(0,0,0,0.12)" }} />
+          <ProductImage src={product.image_url} size={160} style={{ borderRadius: 20, boxShadow: "0 15px 35px rgba(0,0,0,0.12)" }} />
         ) : (
-          <Droplet size={70} color={BLUE} />
+          <Droplet size={80} color={BLUE} />
         )}
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 6 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8 }}>
         <div>
           {product.brand && (
-            <p style={{ fontSize: 12, color: "#9B9A93", margin: "0 0 4px", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5 }}>
+            <p style={{ fontSize: 13, color: "#9B9A93", margin: "0 0 6px", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>
               {product.brand} {product.quantity ? ` · ${product.quantity}` : ""}
             </p>
           )}
-          <p style={{ fontSize: 20, fontWeight: 800, margin: 0, lineHeight: 1.2 }}>{product.name}</p>
+          <p style={{ fontSize: 22, fontWeight: 800, margin: 0, lineHeight: 1.2 }}>{product.name}</p>
         </div>
         {product.promo ? (
           <Pill tone="danger">{product.promo}</Pill>
@@ -954,15 +951,15 @@ function DetailScreen({ product, goBack }) {
         )}
       </div>
 
-      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 24 }}>
-        <p style={{ fontSize: 32, fontWeight: 800, margin: 0, letterSpacing: -1, color: product.promo ? "#E53935" : INK }}>
-          {sorted[0][1].toFixed(2)} <span style={{ fontSize: 14 }}>AED</span>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 28 }}>
+        <p style={{ fontSize: 36, fontWeight: 800, margin: 0, letterSpacing: -1, color: product.promo ? "#E53935" : INK }}>
+          {sorted[0][1].toFixed(2)} <span style={{ fontSize: 16 }}>AED</span>
         </p>
-        {product.oldPrice && <p className="ecm-old-price" style={{ fontSize: 16 }}>{product.oldPrice.toFixed(2)}</p>}
+        {product.oldPrice && <p className="ecm-old-price" style={{ fontSize: 18 }}>{product.oldPrice.toFixed(2)}</p>}
       </div>
 
-      <p style={{ fontSize: 14, fontWeight: 800, margin: "0 0 12px" }}>Tendance des prix (7 jours)</p>
-      <div style={{ height: 70, display: "flex", alignItems: "flex-end", gap: 6, marginBottom: 24, padding: "10px 10px", background: "#fff", borderRadius: 12, border: "1px solid #ECEAE3" }}>
+      <p style={{ fontSize: 16, fontWeight: 800, margin: "0 0 14px" }}>Price Trend (7 days)</p>
+      <div style={{ height: 80, display: "flex", alignItems: "flex-end", gap: 8, marginBottom: 28, padding: "12px", background: "#fff", borderRadius: 14, border: "1px solid #ECEAE3" }}>
         {trend.map((v, i) => (
           <div
             key={i}
@@ -970,7 +967,7 @@ function DetailScreen({ product, goBack }) {
               flex: 1,
               height: `${(v / max) * 100}%`,
               background: i === trend.length - 1 ? BLUE : "#E6F1FB",
-              borderRadius: 4,
+              borderRadius: 6,
               transition: "height 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
               position: "relative"
             }}
@@ -978,71 +975,70 @@ function DetailScreen({ product, goBack }) {
         ))}
       </div>
 
-      <p style={{ fontSize: 14, fontWeight: 800, margin: "0 0 12px" }}>Où acheter ?</p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 28 }}>
+      <p style={{ fontSize: 16, fontWeight: 800, margin: "0 0 14px" }}>Where to buy?</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
         {sorted.map(([retailer, price], i) => (
           <div
             key={retailer}
-            className="ecm-card"
+            className="ecm-card ecm-btn-bounce"
             style={{
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
               border: i === 0 ? `2px solid ${BLUE}` : "1px solid #ECEAE3",
-              padding: "14px 16px",
-              background: i === 0 ? "#F9FCFF" : "#fff"
+              padding: "16px 20px",
+              background: i === 0 ? "#F9FCFF" : "#fff",
+              cursor: "pointer"
             }}
           >
             <div>
-              {i === 0 && <span style={{ fontSize: 10, color: BLUE, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 }}>Meilleure offre</span>}
-              <p style={{ fontSize: 14, fontWeight: 700, margin: i === 0 ? "2px 0 0" : 0 }}>{retailer}</p>
+              {i === 0 && <span style={{ fontSize: 11, color: BLUE, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 }}>Best Deal</span>}
+              <p style={{ fontSize: 16, fontWeight: 800, margin: i === 0 ? "4px 0 0" : 0 }}>{retailer}</p>
             </div>
-            <p style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>{price.toFixed(2)} AED</p>
+            <p style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>{price.toFixed(2)} AED</p>
           </div>
         ))}
       </div>
 
-      <div style={{ display: "flex", gap: 10 }}>
+      <div style={{ display: "flex", gap: 12 }}>
         <button
           onClick={() => setAlertOn((v) => !v)}
+          className="ecm-btn-bounce"
           style={{
             flex: 1,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             gap: 8,
-            padding: 16,
-            fontSize: 13,
-            fontWeight: 700,
+            padding: 18,
+            fontSize: 14,
+            fontWeight: 800,
             borderRadius: 16,
             border: `2px solid ${alertOn ? BLUE : "#ECEAE3"}`,
             background: alertOn ? "#E6F1FB" : "#fff",
             color: alertOn ? BLUE : INK,
             cursor: "pointer",
-            transition: "all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-            transform: alertOn ? "scale(0.98)" : "scale(1)"
           }}
         >
-          <Bell size={18} className={alertOn ? "ecm-wobble" : ""} />
-          {alertOn ? "Alerte activée" : "Alerte prix"}
+          <Bell size={20} className={alertOn ? "ecm-wobble" : ""} />
+          {alertOn ? "Alert On" : "Price Alert"}
         </button>
         <button
-          className="ecm-pulse"
+          className="ecm-pulse ecm-btn-bounce"
           style={{
             flex: 1.5,
             background: BLUE,
             color: "#fff",
             border: "none",
             borderRadius: 16,
-            padding: 16,
-            fontSize: 14,
+            padding: 18,
+            fontSize: 15,
             fontWeight: 800,
             cursor: "pointer",
-            transition: "all 0.2s",
             boxShadow: "0 8px 20px rgba(21,104,192,0.3)"
           }}
         >
-          Acheter maintenant
+          Buy Now
         </button>
       </div>
     </div>
@@ -1050,29 +1046,29 @@ function DetailScreen({ product, goBack }) {
 }
 
 function ProfileScreen({ goSubscription }) {
-  const [lang, setLang] = useState("Français");
+  const [lang, setLang] = useState("English");
   const rows = [
     {
       icon: ArrowLeftRight,
-      label: "Langue",
+      label: "Language",
       value: lang,
       onClick: () =>
-        setLang(lang === "Français" ? "English" : lang === "English" ? "العربية" : "Français"),
+        setLang(lang === "English" ? "العربية" : "English"),
     },
-    { icon: Gift, label: "Inviter des amis", value: "Gagner 50 AED", onClick: () => {
-      if(navigator.share) navigator.share({title: 'Rejoins-moi sur Easy Compare!', url: window.location.href})
+    { icon: Gift, label: "Invite Friends", value: "Earn 50 AED", onClick: () => {
+      if(navigator.share) navigator.share({title: 'Join me on Easy Compare!', url: window.location.href})
     }},
-    { icon: Wallet, label: "Botim connecté", value: "Oui" },
-    { icon: Bell, label: "Alertes de prix actives", value: "3" },
+    { icon: Wallet, label: "Botim Connected", value: "Yes" },
+    { icon: Bell, label: "Active Alerts", value: "3" },
   ];
   return (
     <div className="ecm-fade-up">
-      <TopBar title="Mon Profil" shareable={true} />
-      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24, padding: 12 }}>
+      <TopBar title="My Profile" shareable={true} />
+      <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 28, padding: 14 }}>
         <div
           style={{
-            width: 60,
-            height: 60,
+            width: 64,
+            height: 64,
             borderRadius: "50%",
             background: "linear-gradient(135deg, #1568C0, #0C447C)",
             display: "flex",
@@ -1080,27 +1076,27 @@ function ProfileScreen({ goSubscription }) {
             justifyContent: "center",
             fontWeight: 800,
             color: "#fff",
-            fontSize: 20,
+            fontSize: 22,
             boxShadow: "0 8px 15px rgba(21,104,192,0.2)"
           }}
         >
           VA
         </div>
         <div>
-          <p style={{ fontWeight: 800, fontSize: 18, margin: 0 }}>Valentin A.</p>
-          <p style={{ fontSize: 13, color: "#9B9A93", margin: "4px 0 0", fontWeight: 500 }}>Membre depuis 2026</p>
+          <p style={{ fontWeight: 800, fontSize: 20, margin: 0 }}>Valentin A.</p>
+          <p style={{ fontSize: 14, color: "#9B9A93", margin: "6px 0 0", fontWeight: 600 }}>Member since 2026</p>
         </div>
       </div>
 
       <div
         onClick={goSubscription}
-        className="ecm-card ecm-pulse"
+        className="ecm-card ecm-pulse ecm-btn-bounce"
         style={{
           background: "linear-gradient(135deg, #181818, #2D2D2D)",
           color: "#fff",
           border: "none",
-          padding: 20,
-          marginBottom: 24,
+          padding: 24,
+          marginBottom: 28,
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -1109,16 +1105,16 @@ function ProfileScreen({ goSubscription }) {
         }}
       >
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-            <Sparkles size={16} color="#D4A843" />
-            <p style={{ fontSize: 15, fontWeight: 800, color: "#D4A843", margin: 0 }}>Passer Premium VIP</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <Sparkles size={18} color="#D4A843" />
+            <p style={{ fontSize: 16, fontWeight: 800, color: "#D4A843", margin: 0 }}>Upgrade to VIP</p>
           </div>
-          <p style={{ fontSize: 12, color: "#A0A0A0", margin: 0 }}>Accès illimité + Alertes en temps réel</p>
+          <p style={{ fontSize: 13, color: "#A0A0A0", margin: 0, fontWeight: 500 }}>Unlimited Access + Real-time Alerts</p>
         </div>
-        <ChevronRight size={22} color="#D4A843" />
+        <ChevronRight size={24} color="#D4A843" />
       </div>
 
-      <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #ECEAE3", overflow: "hidden" }}>
+      <div style={{ background: "#fff", borderRadius: 18, border: "1px solid #ECEAE3", overflow: "hidden" }}>
         {rows.map((r, i) => {
           const Icon = r.icon;
           const isLast = i === rows.length - 1;
@@ -1127,29 +1123,29 @@ function ProfileScreen({ goSubscription }) {
             <button
               key={i}
               onClick={r.onClick}
+              className="ecm-btn-bounce"
               style={{
                 width: "100%",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                padding: "16px",
+                padding: "20px",
                 background: isHighlight ? "#FFF8E7" : "none",
                 border: "none",
                 borderBottom: isLast ? "none" : "1px solid #ECEAE3",
                 cursor: r.onClick ? "pointer" : "default",
                 textAlign: "left",
-                transition: "background 0.2s"
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <div style={{ background: isHighlight ? "#D4A843" : "#F0EFEA", padding: 8, borderRadius: 10, color: isHighlight ? "#fff" : "#5F5E5A" }}>
-                  <Icon size={18} />
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <div style={{ background: isHighlight ? "#D4A843" : "#F0EFEA", padding: 10, borderRadius: 12, color: isHighlight ? "#fff" : "#5F5E5A" }}>
+                  <Icon size={20} />
                 </div>
-                <span style={{ fontSize: 14, fontWeight: 600, color: isHighlight ? "#854F0B" : INK }}>{r.label}</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: isHighlight ? "#854F0B" : INK }}>{r.label}</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: isHighlight ? "#D4A843" : "#9B9A93" }}>{r.value}</span>
-                <ChevronRight size={16} color={isHighlight ? "#D4A843" : "#D1D0CA"} />
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 800, color: isHighlight ? "#D4A843" : "#9B9A93" }}>{r.value}</span>
+                <ChevronRight size={18} color={isHighlight ? "#D4A843" : "#D1D0CA"} />
               </div>
             </button>
           );
@@ -1165,7 +1161,7 @@ export default function EasyCompareMarketPrototype() {
   const isMobile = useIsMobile();
   const [screen, setScreen] = useState("home");
   const [detailProduct, setDetailProduct] = useState(null);
-  const [activeCategory, setActiveCategory] = useState('tout');
+  const [activeCategory, setActiveCategory] = useState('all');
 
   const goSearch = () => setScreen("search");
   const goDetail = (p) => {
@@ -1194,8 +1190,8 @@ export default function EasyCompareMarketPrototype() {
         {content}
       </AppShell>
       {!isMobile && (
-        <p style={{ marginTop: 24, fontSize: 12, color: "#9B9A93", textAlign: "center", maxWidth: 360, lineHeight: 1.5 }}>
-          Démo virale — promotions 🔥, FOMO 👀, partage natif 📤, paiement Stripe 💳 et PWA prête à installer.
+        <p style={{ marginTop: 24, fontSize: 13, color: "#9B9A93", textAlign: "center", maxWidth: 360, lineHeight: 1.5, fontWeight: 500 }}>
+          Viral Demo — 🔥 Deals, 👀 FOMO, 📤 Native Share, 💳 Stripe Ready & PWA.
         </p>
       )}
     </>
