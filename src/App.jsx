@@ -39,7 +39,7 @@ import {
 } from "@stripe/react-stripe-js";
 
 // Uses Environment Variable if available, fallback to test key for demo
-const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || "pk_test_TYooMQauvdEDq54NiTphI7jx";
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || "pk_test_51UO67QQZ4erOPMFkrioLYbDWoWFyiZXtqP1nUGJBGbO2JhgOTRK78JQ9pLB2yx7queAKVB2iehCCyGl2jnihWyUn005XNVatKZ";
 const stripePromise = loadStripe(stripeKey);
 
 /* ═══════════════════ DESIGN TOKENS ═══════════════════ */
