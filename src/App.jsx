@@ -144,6 +144,19 @@ function generateTrend(identifier) {
   return trend;
 }
 
+function getRetailerUrl(retailer, productName) {
+  const query = encodeURIComponent(productName);
+  const r = String(retailer).toLowerCase();
+  if (r.includes("carrefour")) {
+    return `https://www.carrefouruae.com/mafuae/en/search?keyword=${query}`;
+  } else if (r.includes("amazon")) {
+    return `https://www.amazon.ae/s?k=${query}`;
+  } else if (r.includes("lulu")) {
+    return `https://www.luluhypermarket.com/en-ae/search/?text=${query}`;
+  }
+  return `https://www.google.com/search?q=${encodeURIComponent(retailer + ' ' + productName)}`;
+}
+
 /* ═══════════════════ HOOKS ═══════════════════ */
 
 function usePWAInstall() {
@@ -1206,6 +1219,7 @@ function SearchScreen({ goBack, goDetail }) {
 function DetailScreen({ product, goBack }) {
   const [alertOn, setAlertOn] = useState(false);
   const sorted = Object.entries(product.prices).sort((a, b) => a[1] - b[1]);
+  const [selectedRetailer, setSelectedRetailer] = useState(sorted[0][0]);
   const trend = product.trend || generateTrend(product.id);
   const max = Math.max(...trend);
 
@@ -1213,6 +1227,11 @@ function DetailScreen({ product, goBack }) {
 
   // Gamification FOMO
   const viewers = useMemo(() => Math.floor(Math.random() * 20) + 3, []);
+
+  const handleBuyNow = (retailerName = selectedRetailer) => {
+    const url = getRetailerUrl(retailerName, product.name);
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <div className="ecm-fade-up">
@@ -1283,27 +1302,39 @@ function DetailScreen({ product, goBack }) {
 
       <p style={{ fontSize: 16, fontWeight: 800, margin: "0 0 14px" }}>Where to buy?</p>
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
-        {sorted.map(([retailer, price], i) => (
-          <div
-            key={retailer}
-            className="ecm-card ecm-btn-bounce"
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              border: i === 0 ? `2px solid ${BLUE}` : "1px solid #ECEAE3",
-              padding: "16px 20px",
-              background: i === 0 ? "#F9FCFF" : "#fff",
-              cursor: "pointer"
-            }}
-          >
-            <div>
-              {i === 0 && <span style={{ fontSize: 11, color: BLUE, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 }}>Best Deal</span>}
-              <p style={{ fontSize: 16, fontWeight: 800, margin: i === 0 ? "4px 0 0" : 0 }}>{retailer}</p>
+        {sorted.map(([retailer, price], i) => {
+          const isSelected = selectedRetailer === retailer;
+          return (
+            <div
+              key={retailer}
+              className="ecm-card ecm-btn-bounce"
+              onClick={() => {
+                setSelectedRetailer(retailer);
+                handleBuyNow(retailer);
+              }}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                border: isSelected ? `2px solid ${BLUE}` : "1px solid #ECEAE3",
+                padding: "16px 20px",
+                background: isSelected ? "#F9FCFF" : "#fff",
+                cursor: "pointer"
+              }}
+            >
+              <div>
+                {i === 0 && <span style={{ fontSize: 11, color: BLUE, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 }}>Best Deal · </span>}
+                <p style={{ fontSize: 16, fontWeight: 800, margin: i === 0 ? "2px 0 0" : 0, color: INK }}>{retailer}</p>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <p style={{ fontSize: 18, fontWeight: 800, margin: 0, color: INK }}>{price.toFixed(2)} AED</p>
+                <span style={{ fontSize: 11, color: BLUE, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 3, marginTop: 2 }}>
+                  Acheter <ExternalLink size={12} />
+                </span>
+              </div>
             </div>
-            <p style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>{price.toFixed(2)} AED</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       <div style={{ display: "flex", gap: 12 }}>
@@ -1330,6 +1361,7 @@ function DetailScreen({ product, goBack }) {
           {alertOn ? "Alert On" : "Price Alert"}
         </button>
         <button
+          onClick={() => handleBuyNow(selectedRetailer)}
           className="ecm-pulse ecm-btn-bounce"
           style={{
             flex: 1.5,
@@ -1341,10 +1373,14 @@ function DetailScreen({ product, goBack }) {
             fontSize: 15,
             fontWeight: 800,
             cursor: "pointer",
-            boxShadow: "0 8px 20px rgba(21,104,192,0.3)"
+            boxShadow: "0 8px 20px rgba(21,104,192,0.3)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6
           }}
         >
-          Buy Now
+          Acheter sur {selectedRetailer} <ExternalLink size={18} />
         </button>
       </div>
     </div>
