@@ -19,6 +19,9 @@ export default async function handler(req, res) {
               description: 'Accès illimité et alertes de prix en temps réel',
             },
             unit_amount: 1499, // 14.99 AED
+            recurring: {
+              interval: 'month',
+            },
           },
           quantity: 1,
         },

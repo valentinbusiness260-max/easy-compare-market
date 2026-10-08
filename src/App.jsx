@@ -24,7 +24,11 @@ import {
   Share2,
   Users,
   Flame,
-  Gift
+  Gift,
+  Download,
+  ExternalLink,
+  Copy,
+  Apple
 } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import {
@@ -141,6 +145,38 @@ function generateTrend(identifier) {
 }
 
 /* ═══════════════════ HOOKS ═══════════════════ */
+
+function usePWAInstall() {
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+
+  useEffect(() => {
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    setIsIOS(ios);
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    setIsInstalled(standalone);
+
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    window.addEventListener('appinstalled', () => setIsInstalled(true));
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const triggerInstall = async () => {
+    if (!deferredPrompt) return false;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    setDeferredPrompt(null);
+    if (outcome === 'accepted') setIsInstalled(true);
+    return outcome === 'accepted';
+  };
+
+  return { canInstall: !!deferredPrompt, isInstalled, isIOS, triggerInstall };
+}
 
 function useIsMobile(breakpoint = 768) {
   const [isMobile, setIsMobile] = useState(() =>
@@ -387,7 +423,7 @@ function BottomNav({ screen, setScreen, isMobile }) {
   const items = [
     { id: "home", icon: Home, label: "Home" },
     { id: "search", icon: Search, label: "Search" },
-    { id: "alerts", icon: Bell, label: "Alerts" },
+    { id: "alerts", icon: Download, label: "Installer" },
     { id: "profile", icon: User, label: "Profile" },
   ];
   return (
@@ -476,99 +512,369 @@ function ProductImage({ src, size = 40, style = {} }) {
 
 /* ═══════════════════ SCREENS ═══════════════════ */
 
+/* ═══════════════════ INSTALL SCREEN ═══════════════════ */
+
+function InstallScreen() {
+  const { canInstall, isInstalled, isIOS, triggerInstall } = usePWAInstall();
+  const [copied, setCopied] = useState(false);
+  const [installing, setInstalling] = useState(false);
+  const APP_URL = "https://easy-compare-market.vercel.app";
+
+  const handleInstall = async () => {
+    setInstalling(true);
+    await triggerInstall();
+    setInstalling(false);
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(APP_URL).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    });
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Easy Compare Market 🛒',
+          text: '💸 J\'utilise cette app pour comparer les prix Carrefour, Amazon.ae et Lulu ! Installe-la gratuitement 👇',
+          url: APP_URL,
+        });
+      } catch (_) {}
+    } else {
+      handleCopy();
+    }
+  };
+
+  return (
+    <div className="ecm-fade-up" style={{ paddingBottom: 20 }}>
+      <TopBar title="Installer l'app" />
+
+      {/* Hero banner */}
+      <div
+        className="ecm-gradient-animated"
+        style={{
+          borderRadius: 24,
+          padding: "28px 24px",
+          marginBottom: 24,
+          color: "#fff",
+          textAlign: "center",
+          boxShadow: "0 12px 30px rgba(21,104,192,0.3)",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <div style={{ fontSize: 52, marginBottom: 12 }}>📲</div>
+        <p style={{ fontSize: 20, fontWeight: 800, margin: "0 0 8px", letterSpacing: -0.3 }}>
+          {isInstalled ? "App déjà installée ! 🎉" : "Installe l'app gratuitement"}
+        </p>
+        <p style={{ fontSize: 13, opacity: 0.85, margin: 0, fontWeight: 500, lineHeight: 1.5 }}>
+          {isInstalled
+            ? "Tu peux maintenant partager l'app avec tes amis !"
+            : "Compare les prix depuis ton écran d'accueil, sans navigateur."}
+        </p>
+      </div>
+
+      {/* Install section */}
+      {!isInstalled && (
+        <div style={{ marginBottom: 20 }}>
+          <p style={{ fontSize: 14, fontWeight: 800, color: "#5F5E5A", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 0.5 }}>
+            📥 Installation
+          </p>
+
+          {/* Android / Desktop */}
+          {canInstall && (
+            <button
+              onClick={handleInstall}
+              className="ecm-pulse ecm-btn-bounce"
+              style={{
+                width: "100%",
+                background: BLUE,
+                color: "#fff",
+                border: "none",
+                borderRadius: 18,
+                padding: "18px 20px",
+                fontSize: 16,
+                fontWeight: 800,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10,
+                boxShadow: "0 10px 25px rgba(21,104,192,0.3)",
+                marginBottom: 12,
+              }}
+            >
+              <Download size={22} />
+              {installing ? "Installation..." : "Installer sur mon téléphone"}
+            </button>
+          )}
+
+          {/* iOS instructions */}
+          {isIOS && (
+            <div
+              style={{
+                background: "#F0F7FF",
+                border: "1.5px solid #BDD9F7",
+                borderRadius: 18,
+                padding: "18px 20px",
+                marginBottom: 12,
+              }}
+            >
+              <p style={{ fontWeight: 800, fontSize: 15, margin: "0 0 14px", color: BLUE_DARK, display: "flex", alignItems: "center", gap: 8 }}>
+                <span>🍎</span> Sur iPhone / iPad
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {[
+                  { step: "1", text: "Appuie sur le bouton Partager", icon: "⬆️" },
+                  { step: "2", text: "Sélectionne \"Sur l'écran d'accueil\"", icon: "➕" },
+                  { step: "3", text: "Appuie sur \"Ajouter\" — c'est installé !", icon: "✅" },
+                ].map(({ step, text, icon }) => (
+                  <div key={step} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: BLUE, color: "#fff", fontSize: 13, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{step}</div>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: INK }}>{icon} {text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Fallback if no prompt and not iOS */}
+          {!canInstall && !isIOS && (
+            <div
+              style={{
+                background: "#F7F6F2",
+                border: "1.5px solid #ECEAE3",
+                borderRadius: 18,
+                padding: "18px 20px",
+                marginBottom: 12,
+              }}
+            >
+              <p style={{ fontWeight: 800, fontSize: 14, margin: "0 0 6px", color: INK }}>📱 Sur Android (Chrome)</p>
+              <p style={{ fontSize: 13, color: "#5F5E5A", margin: "0 0 12px", lineHeight: 1.5, fontWeight: 500 }}>
+                Ouvre ce lien dans Chrome, puis appuie sur <strong>"Ajouter à l'écran d'accueil"</strong> dans le menu ⋮
+              </p>
+              <a
+                href={APP_URL}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  color: BLUE,
+                  fontWeight: 700,
+                  fontSize: 14,
+                  textDecoration: "none",
+                }}
+              >
+                <ExternalLink size={16} /> Ouvrir dans Chrome
+              </a>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Share section */}
+      <p style={{ fontSize: 14, fontWeight: 800, color: "#5F5E5A", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 0.5 }}>
+        📤 Partager avec des amis
+      </p>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
+        {/* Share button */}
+        <button
+          onClick={handleShare}
+          className="ecm-btn-bounce"
+          style={{
+            width: "100%",
+            background: "linear-gradient(135deg, #25D366, #1DA851)",
+            color: "#fff",
+            border: "none",
+            borderRadius: 18,
+            padding: "18px 20px",
+            fontSize: 16,
+            fontWeight: 800,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            boxShadow: "0 8px 20px rgba(37,211,102,0.25)",
+          }}
+        >
+          <Share2 size={20} />
+          Partager avec mes amis
+        </button>
+
+        {/* Copy link */}
+        <button
+          onClick={handleCopy}
+          className="ecm-btn-bounce"
+          style={{
+            width: "100%",
+            background: copied ? "#EAF3DE" : "#F0EFEA",
+            color: copied ? "#3B6D11" : INK,
+            border: `1.5px solid ${copied ? "#B6DFA0" : "#ECEAE3"}`,
+            borderRadius: 18,
+            padding: "16px 20px",
+            fontSize: 14,
+            fontWeight: 700,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            transition: "all 0.25s",
+          }}
+        >
+          <Copy size={18} />
+          <span style={{ flex: 1, textAlign: "left", fontSize: 13, color: "#5F5E5A", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {APP_URL}
+          </span>
+          <span style={{ fontWeight: 800, color: copied ? "#3B6D11" : BLUE, flexShrink: 0 }}>
+            {copied ? "Copié ✓" : "Copier"}
+          </span>
+        </button>
+      </div>
+
+      {/* Stats viral */}
+      <div style={{ background: "#FFF8E7", borderRadius: 18, padding: "16px 20px", border: "1.5px solid #F5DFA0" }}>
+        <p style={{ fontWeight: 800, fontSize: 14, margin: "0 0 12px", color: "#854F0B", display: "flex", alignItems: "center", gap: 8 }}>
+          <Gift size={16} /> Programme de parrainage
+        </p>
+        <p style={{ fontSize: 13, color: "#5F5E5A", margin: 0, lineHeight: 1.6, fontWeight: 500 }}>
+          Chaque ami que tu invites te rapporte <strong style={{ color: "#D4A843" }}>50 AED</strong> de crédit. Partage maintenant et commence à gagner ! 🎁
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function SubscriptionScreen({ goBack, email }) {
   const stripe = useStripe();
-  const elements = useElements();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  useEffect(() => {
+    // Check if coming back from successful checkout
+    const query = new URLSearchParams(window.location.search);
+    if (query.get("success")) {
+      setSuccess(true);
+      // Clean up URL
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
+
+  const handleShareToUnlock = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Easy Compare Market 🛒',
+          text: 'Découvre cette app géniale pour comparer les prix. On gagne tous les deux 50 AED de crédit si tu t\'inscris ! 👇',
+          url: window.location.origin + "?ref=VIP",
+        });
+        alert("Merci d'avoir partagé ! Ton compte sera crédité si ton ami s'inscrit.");
+      } catch (err) {
+        console.error("Share failed", err);
+      }
+    } else {
+      alert("Partage ce lien: " + window.location.origin + "?ref=VIP");
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!stripe || !elements) return;
+    if (!stripe) return;
 
     setLoading(true);
-    // Real deployment will call an endpoint, this simulates it
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/create-checkout', { method: 'POST' });
+      const { id, message } = await res.json();
+      
+      if (id) {
+        const { error } = await stripe.redirectToCheckout({ sessionId: id });
+        if (error) {
+          console.error(error);
+          setLoading(false);
+        }
+      } else {
+        alert("Erreur: " + message);
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error(err);
       setLoading(false);
-      setSuccess(true);
-    }, 2000);
+      alert("Impossible de se connecter au serveur de paiement.");
+    }
   };
 
   if (success) {
     return (
       <div className="ecm-fade-up" style={{ textAlign: "center", padding: "40px 12px" }}>
-        <TopBar title="Subscription Confirmed" onBack={goBack} />
+        <TopBar title="Abonnement Confirmé" onBack={goBack} />
         <div className="ecm-scale-pop" style={{ marginTop: 40, marginBottom: 20 }}>
           <Check size={64} color="#3B6D11" style={{ background: "#EAF3DE", borderRadius: "50%", padding: 12 }} />
         </div>
-        <h2 style={{ margin: "0 0 8px", fontSize: 24, fontWeight: 800 }}>Payment Successful! 🎉</h2>
+        <h2 style={{ margin: "0 0 8px", fontSize: 24, fontWeight: 800 }}>Paiement Réussi ! 🎉</h2>
         <p style={{ color: "#5F5E5A", fontSize: 14, lineHeight: 1.5 }}>
-          Congratulations, you are now Premium! A receipt has been sent to <strong>{email}</strong>.
+          Félicitations, tu es maintenant Premium ! Un reçu a été envoyé à <strong>{email}</strong>.
         </p>
+        
+        <div style={{ background: "#FFF8E7", borderRadius: 16, padding: "20px", marginTop: 24, border: "1.5px solid #F5DFA0" }}>
+          <p style={{ fontWeight: 800, fontSize: 16, margin: "0 0 10px", color: "#854F0B" }}>🎁 Rends l'app Virale !</p>
+          <p style={{ fontSize: 13, color: "#5F5E5A", margin: "0 0 16px", lineHeight: 1.5 }}>
+            Partage ton lien exclusif. Pour chaque ami qui s'abonne, tu reçois 1 mois gratuit !
+          </p>
+          <button
+            onClick={handleShareToUnlock}
+            className="ecm-btn-bounce"
+            style={{
+              background: "#D4A843", color: "#fff", border: "none", borderRadius: 12, padding: "12px 20px", fontSize: 14, fontWeight: 800, cursor: "pointer", width: "100%"
+            }}
+          >
+            Inviter un ami
+          </button>
+        </div>
+
         <button
           onClick={goBack}
           className="ecm-btn-bounce"
           style={{
-            background: BLUE,
-            color: "#fff",
-            border: "none",
-            borderRadius: 14,
-            padding: "16px 24px",
-            fontSize: 15,
-            fontWeight: 800,
-            cursor: "pointer",
-            marginTop: 30,
-            width: "100%",
-            boxShadow: "0 10px 20px rgba(21, 104, 192, 0.2)"
+            background: BLUE, color: "#fff", border: "none", borderRadius: 14, padding: "16px 24px", fontSize: 15, fontWeight: 800, cursor: "pointer", marginTop: 30, width: "100%", boxShadow: "0 10px 20px rgba(21, 104, 192, 0.2)"
           }}
         >
-          Back to Home
+          Retour à l'accueil
         </button>
       </div>
     );
   }
 
   return (
-    <div className="ecm-fade-up">
-      <TopBar title="Premium Subscription" onBack={goBack} />
+    <div className="ecm-fade-up" style={{ paddingBottom: 24 }}>
+      <TopBar title="Abonnement Premium" onBack={goBack} />
       
       <div className="ecm-plan-card recommended ecm-pulse" style={{ marginBottom: 20, marginTop: 15 }}>
-        <h3 style={{ margin: "10px 0 5px", color: BLUE_DARK, fontSize: 18, fontWeight: 800 }}>VIP Premium Plan</h3>
+        <h3 style={{ margin: "10px 0 5px", color: BLUE_DARK, fontSize: 18, fontWeight: 800 }}>Plan VIP Premium</h3>
         <div style={{ fontSize: 32, fontWeight: 800, margin: "10px 0", color: INK }}>
-          14.99 <span style={{fontSize: 14, fontWeight: 600, color: "#5F5E5A"}}>AED / month</span>
+          14.99 <span style={{fontSize: 14, fontWeight: 600, color: "#5F5E5A"}}>AED / mois</span>
         </div>
         <ul style={{ listStyle: "none", padding: 0, margin: "20px 0 10px", textAlign: "left", fontSize: 13, display: "flex", flexDirection: "column", gap: 12 }}>
           <li style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <div style={{ background: "#EAF3DE", padding: 4, borderRadius: "50%", color: "#3B6D11" }}><Check size={14} /></div>
-            Real-time price comparison
+            Comparaison de prix en temps réel
           </li>
           <li style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <div style={{ background: "#EAF3DE", padding: 4, borderRadius: "50%", color: "#3B6D11" }}><Check size={14} /></div>
-            Access to +10,000 exclusive products
+            Accès à +10,000 produits exclusifs
           </li>
           <li style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <div style={{ background: "#EAF3DE", padding: 4, borderRadius: "50%", color: "#3B6D11" }}><Check size={14} /></div>
-            Instant price drop alerts
+            Alertes instantanées de baisse de prix
           </li>
         </ul>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 15 }}>
-        <div style={{ padding: "16px 12px", border: "1px solid #ECEAE3", borderRadius: 14, background: "#FAFAFA" }}>
-          <CardElement options={{
-            style: {
-              base: {
-                fontSize: '15px',
-                color: '#181818',
-                fontFamily: 'Inter, sans-serif',
-                '::placeholder': {
-                  color: '#9B9A93',
-                },
-              },
-            },
-          }} />
-        </div>
-        
         <button
           disabled={!stripe || loading}
           type="submit"
@@ -578,8 +884,8 @@ function SubscriptionScreen({ goBack, email }) {
             color: "#fff",
             border: "none",
             borderRadius: 14,
-            padding: 16,
-            fontSize: 15,
+            padding: 18,
+            fontSize: 16,
             fontWeight: 800,
             cursor: "pointer",
             display: "flex",
@@ -587,13 +893,13 @@ function SubscriptionScreen({ goBack, email }) {
             justifyContent: "center",
             gap: 8,
             transition: "all 0.2s",
-            boxShadow: "0 10px 20px rgba(21, 104, 192, 0.2)"
+            boxShadow: "0 10px 20px rgba(21, 104, 192, 0.3)"
           }}
         >
-          {loading ? "Processing Securely..." : "Activate Premium Account"}
+          {loading ? "Redirection vers Stripe..." : "S'abonner via Stripe"}
         </button>
         <p style={{ fontSize: 12, color: "#9B9A93", textAlign: "center", margin: 0, fontWeight: 500 }}>
-          🔒 256-bit Encrypted Secure Payment
+          🔒 Paiement Sécurisé 256-bit par Stripe
         </p>
       </form>
     </div>
@@ -1175,6 +1481,7 @@ export default function EasyCompareMarketPrototype() {
   if (screen === "home") content = <HomeScreen goSearch={goSearch} goDetail={goDetail} activeCategory={activeCategory} setActiveCategory={setActiveCategory} />;
   else if (screen === "search") content = <SearchScreen goBack={goBackToHome} goDetail={goDetail} />;
   else if (screen === "detail") content = <DetailScreen product={detailProduct} goBack={() => setScreen(detailProduct && detailProduct.fromApi ? "search" : "home")} />;
+  else if (screen === "alerts") content = <InstallScreen />;
   else if (screen === "profile") content = <ProfileScreen goSubscription={goSubscription} />;
   else if (screen === "subscription") content = <Elements stripe={stripePromise}><SubscriptionScreen goBack={goBackToHome} email="provalentin883@gmail.com" /></Elements>;
   else content = <div />;

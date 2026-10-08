@@ -4,6 +4,20 @@ import Stripe from 'stripe';
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+async function buffer(readable) {
+  const chunks = [];
+  for await (const chunk of readable) {
+    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+  }
+  return Buffer.concat(chunks);
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).send('Method Not Allowed');
@@ -13,9 +27,8 @@ export default async function handler(req, res) {
   let event;
 
   try {
-    // Note: In a real Vercel environment with raw body, we'd need to parse it correctly
-    // For simplicity in this demo, we assume JSON body is provided by Vercel
-    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    const rawBody = await buffer(req);
+    event = stripe.webhooks.constructEvent(rawBody.toString('utf8'), sig, endpointSecret);
   } catch (err) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
