@@ -1370,17 +1370,16 @@ function DetailScreen({ product, goBack }) {
             border: "none",
             borderRadius: 16,
             padding: 18,
-            fontSize: 15,
+            fontSize: 16,
             fontWeight: 800,
             cursor: "pointer",
             boxShadow: "0 8px 20px rgba(21,104,192,0.3)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 6
           }}
         >
-          Acheter sur {selectedRetailer} <ExternalLink size={18} />
+          Buy Now
         </button>
       </div>
     </div>
