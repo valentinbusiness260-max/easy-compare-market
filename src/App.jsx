@@ -61,46 +61,66 @@ const CATEGORIES = [
 const LOCAL_PRODUCTS = [
   // Water
   {
-    id: "masafi-500", category: "water", name: "Masafi Water 500ml x12", brand: "Masafi",
+    id: "masafi-500", category: "water", name: "Masafi Mineral Water 500ml x12", brand: "Masafi",
     trend: [58, 62, 60, 68, 50, 40, 32], prices: { Carrefour: 10.5, "Amazon.ae": 13.9, Lulu: 14.25 },
-    oldPrice: 16.5, promo: "FLASH", image_url: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=200&h=200&fit=crop"
+    oldPrice: 16.5, promo: "#1 BESTSELLER", image_url: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=200&h=200&fit=crop"
   },
   {
     id: "alain-1500", category: "water", name: "Al Ain Water 1.5L x6", brand: "Al Ain",
     trend: [40, 45, 42, 50, 48, 44, 38], prices: { "Amazon.ae": 12.6, Carrefour: 15.2, Lulu: 15.9 },
-    oldPrice: 18.0, promo: "-30%", image_url: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=200&h=200&fit=crop"
+    oldPrice: 18.0, promo: "-30% OFF", image_url: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=200&h=200&fit=crop"
   },
   // Grocery
   {
-    id: "basmati-rice", category: "grocery", name: "Tilda Basmati Rice 5kg", brand: "Tilda",
+    id: "basmati-rice", category: "grocery", name: "Tilda Pure Basmati Rice 5kg", brand: "Tilda",
     trend: [150, 145, 148, 140, 130, 125, 120], prices: { Lulu: 45.5, Carrefour: 52.0, "Amazon.ae": 50.0 },
-    oldPrice: 65.0, promo: "HOT DEAL", image_url: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=200&h=200&fit=crop"
+    oldPrice: 65.0, promo: "HOT DEAL 🔥", image_url: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=200&h=200&fit=crop"
   },
   {
-    id: "nutella-750", category: "grocery", name: "Nutella Chocolate Spread 750g", brand: "Nutella",
+    id: "nutella-750", category: "grocery", name: "Nutella Hazelnut Spread 750g", brand: "Nutella",
     trend: [80, 82, 75, 70, 72, 65, 60], prices: { Carrefour: 22.5, "Amazon.ae": 24.0, Lulu: 26.5 },
-    oldPrice: 32.0, promo: "-25%", image_url: "https://images.unsplash.com/photo-1588661668264-a032890fc2f1?w=200&h=200&fit=crop"
+    oldPrice: 32.0, promo: "-25% OFF", image_url: "https://images.unsplash.com/photo-1588661668264-a032890fc2f1?w=200&h=200&fit=crop"
+  },
+  {
+    id: "nescafe-gold", category: "grocery", name: "Nescafe Gold Instant Coffee 200g", brand: "Nescafe",
+    trend: [45, 42, 40, 38, 35, 32, 30], prices: { "Amazon.ae": 28.5, Carrefour: 31.0, Lulu: 33.5 },
+    oldPrice: 39.0, promo: "BESTSELLER ⭐", image_url: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=200&h=200&fit=crop"
   },
   // Home
   {
     id: "fairy-lemon", category: "home", name: "Fairy Dishwashing Liquid 1L", brand: "Fairy",
     trend: [30, 28, 25, 22, 20, 18, 15], prices: { "Amazon.ae": 12.0, Carrefour: 14.5, Lulu: 15.0 },
-    oldPrice: 19.5, promo: "-40%", image_url: "https://images.unsplash.com/photo-1585233157597-9e776e0e3b97?w=200&h=200&fit=crop"
+    oldPrice: 19.5, promo: "-40% OFF", image_url: "https://images.unsplash.com/photo-1585233157597-9e776e0e3b97?w=200&h=200&fit=crop"
   },
   {
-    id: "tide-pods", category: "home", name: "Tide Pods 3-in-1, 30 Count", brand: "Tide",
+    id: "tide-pods", category: "home", name: "Tide Pods 3-in-1 Laundry, 30 Pack", brand: "Tide",
     trend: [90, 85, 80, 75, 70, 65, 60], prices: { Carrefour: 40.0, Lulu: 45.0, "Amazon.ae": 48.0 },
-    oldPrice: 60.0, promo: "FLASH", image_url: "https://images.unsplash.com/photo-1585233157597-9e776e0e3b97?w=200&h=200&fit=crop"
+    oldPrice: 60.0, promo: "FLASH DEAL", image_url: "https://images.unsplash.com/photo-1585233157597-9e776e0e3b97?w=200&h=200&fit=crop"
+  },
+  {
+    id: "nespresso-machine", category: "home", name: "Nespresso Essenza Mini Coffee Machine", brand: "Nespresso",
+    trend: [450, 430, 410, 390, 370, 350, 340], prices: { "Amazon.ae": 329.0, Carrefour: 349.0, Lulu: 379.0 },
+    oldPrice: 449.0, promo: "TOP OFFER 🔥", image_url: "https://images.unsplash.com/photo-1517668808822-9e428824603b?w=200&h=200&fit=crop"
   },
   // Tech
   {
-    id: "airpods-pro", category: "tech", name: "AirPods Pro (2nd Gen)", brand: "Apple",
+    id: "airpods-pro", category: "tech", name: "Apple AirPods Pro (2nd Gen)", brand: "Apple",
     trend: [950, 920, 900, 880, 850, 820, 790], prices: { "Amazon.ae": 750.0, Carrefour: 799.0, Lulu: 820.0 },
-    oldPrice: 999.0, promo: "-25%", image_url: "https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?w=200&h=200&fit=crop"
+    oldPrice: 999.0, promo: "#1 TECH BESTSELLER", image_url: "https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?w=200&h=200&fit=crop"
+  },
+  {
+    id: "iphone-15-pro", category: "tech", name: "iPhone 15 Pro 128GB Natural Titanium", brand: "Apple",
+    trend: [4300, 4250, 4100, 4000, 3900, 3850, 3799], prices: { "Amazon.ae": 3699.0, Carrefour: 3799.0, Lulu: 3849.0 },
+    oldPrice: 4299.0, promo: "SAVE 600 AED", image_url: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200&h=200&fit=crop"
+  },
+  {
+    id: "samsung-s24", category: "tech", name: "Samsung Galaxy S24 Ultra 256GB", brand: "Samsung",
+    trend: [5000, 4800, 4600, 4400, 4200, 4100, 3999], prices: { "Amazon.ae": 3899.0, Carrefour: 3999.0, Lulu: 4099.0 },
+    oldPrice: 4999.0, promo: "BEST DEAL ⭐", image_url: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=200&h=200&fit=crop"
   },
   // Baby
   {
-    id: "pampers-premium", category: "baby", name: "Pampers Premium Care, Size 4", brand: "Pampers",
+    id: "pampers-premium", category: "baby", name: "Pampers Premium Care Diapers, Size 4", brand: "Pampers",
     trend: [110, 105, 100, 95, 90, 85, 80], prices: { Lulu: 65.0, Carrefour: 70.0, "Amazon.ae": 72.0 },
     oldPrice: 95.0, promo: "HOT DEAL", image_url: "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=200&h=200&fit=crop"
   }
@@ -209,6 +229,46 @@ function useIsMobile(breakpoint = 768) {
   return isMobile;
 }
 
+function generateDynamicSearchResults(query) {
+  const clean = query.trim();
+  const title = clean.charAt(0).toUpperCase() + clean.slice(1);
+  return [
+    {
+      id: `dyn-1-${clean}`,
+      name: `${title} Premium Edition`,
+      brand: "Top Store",
+      image_url: "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=200&h=200&fit=crop",
+      quantity: "Standard Pack",
+      prices: generatePrices(`${clean}-1`),
+      trend: generateTrend(`${clean}-1`),
+      promo: "BESTSELLER",
+      fromApi: true
+    },
+    {
+      id: `dyn-2-${clean}`,
+      name: `${title} Pro Max 2026`,
+      brand: "Official Direct",
+      image_url: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&h=200&fit=crop",
+      quantity: "Deluxe Pack",
+      prices: generatePrices(`${clean}-2`),
+      trend: generateTrend(`${clean}-2`),
+      promo: "-25% OFF",
+      fromApi: true
+    },
+    {
+      id: `dyn-3-${clean}`,
+      name: `${title} Special Edition`,
+      brand: "Original",
+      image_url: "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=200&h=200&fit=crop",
+      quantity: "Pack x2",
+      prices: generatePrices(`${clean}-3`),
+      trend: generateTrend(`${clean}-3`),
+      promo: "FLASH DEAL",
+      fromApi: true
+    }
+  ];
+}
+
 function useProductSearch(query, debounceMs = 400) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -241,6 +301,12 @@ function useProductSearch(query, debounceMs = 400) {
       const controller = new AbortController();
       abortRef.current = controller;
 
+      const localMatches = LOCAL_PRODUCTS.filter((p) =>
+        p.name.toLowerCase().includes(query.toLowerCase()) ||
+        p.brand.toLowerCase().includes(query.toLowerCase()) ||
+        p.category.toLowerCase().includes(query.toLowerCase())
+      );
+
       try {
         const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=12&fields=code,product_name,brands,image_small_url,quantity`;
         const res = await fetch(url, {
@@ -251,7 +317,7 @@ function useProductSearch(query, debounceMs = 400) {
         if (!res.ok) throw new Error("API error");
 
         const data = await res.json();
-        const products = (data.products || [])
+        const apiProducts = (data.products || [])
           .filter((p) => p.product_name)
           .map((p) => ({
             id: p.code || Math.random().toString(36).slice(2),
@@ -264,16 +330,22 @@ function useProductSearch(query, debounceMs = 400) {
             fromApi: true,
           }));
 
-        setResults(products);
+        let combined = [...localMatches, ...apiProducts];
+        if (combined.length < 3) {
+          combined = [...combined, ...generateDynamicSearchResults(query)];
+        }
+
+        setResults(combined);
         setLoading(false);
         setIsOnline(true);
       } catch (err) {
         if (err.name === "AbortError") return;
         setIsOnline(false);
-        const local = LOCAL_PRODUCTS.filter((p) =>
-          p.name.toLowerCase().includes(query.toLowerCase())
-        );
-        setResults(local);
+        let combined = [...localMatches];
+        if (combined.length < 3) {
+          combined = [...combined, ...generateDynamicSearchResults(query)];
+        }
+        setResults(combined);
         setLoading(false);
       }
     }, debounceMs);
@@ -921,7 +993,9 @@ function SubscriptionScreen({ goBack, email }) {
   );
 }
 
-function HomeScreen({ goSearch, goDetail, activeCategory, setActiveCategory }) {
+function HomeScreen({ goSearch, goDetail, goSubscription, activeCategory, setActiveCategory }) {
+  const bestsellers = LOCAL_PRODUCTS.slice(0, 6);
+
   return (
     <div>
       <TopBar shareable={true} />
@@ -976,7 +1050,7 @@ function HomeScreen({ goSearch, goDetail, activeCategory, setActiveCategory }) {
           border: "2px solid #ECEAE3",
           borderRadius: 16,
           padding: "16px",
-          marginBottom: 24,
+          marginBottom: 20,
           cursor: "pointer",
           textAlign: "left",
           boxShadow: "0 6px 15px rgba(0,0,0,0.02)"
@@ -986,6 +1060,97 @@ function HomeScreen({ goSearch, goDetail, activeCategory, setActiveCategory }) {
         <span style={{ fontSize: 15, color: "#9B9A93", flex: 1, fontWeight: 600 }}>Search a product...</span>
         <ScanLine size={20} color={BLUE} />
       </button>
+
+      {/* 🏆 BESTSELLERS PUBLICITY CAROUSEL */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <Flame size={18} color="#E53935" />
+            <p style={{ fontSize: 16, fontWeight: 800, margin: 0, color: INK }}>Bestsellers du Mois</p>
+          </div>
+          <span className="ecm-promo-badge" style={{ background: "#FFF8E7", color: "#854F0B", border: "1px solid #F5DFA0" }}>
+            🏆 TOP VENTES
+          </span>
+        </div>
+
+        <div className="ecm-h-scroll" style={{ paddingBottom: 8 }}>
+          {bestsellers.map((item) => {
+            const [retailer, price] = cheapest(item.prices);
+            return (
+              <div
+                key={item.id}
+                onClick={() => goDetail(item)}
+                className="ecm-card ecm-btn-bounce"
+                style={{
+                  width: 170,
+                  padding: "12px",
+                  cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  flexShrink: 0
+                }}
+              >
+                <div>
+                  <div style={{ position: "relative", marginBottom: 8, background: "#F7F6F2", borderRadius: 12, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", padding: 8 }}>
+                    <ProductImage src={item.image_url} size={70} />
+                    {item.promo && (
+                      <span className="ecm-promo-badge" style={{ position: "absolute", top: 4, left: 4, background: "#E53935", color: "#fff", fontSize: 8 }}>
+                        {item.promo}
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ fontSize: 13, fontWeight: 800, margin: "0 0 2px", color: INK, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {item.name}
+                  </p>
+                  <p style={{ fontSize: 11, color: "#9B9A93", margin: "0 0 8px", fontWeight: 600 }}>{item.brand}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: 16, fontWeight: 800, margin: 0, color: BLUE }}>
+                    {price.toFixed(2)} <span style={{ fontSize: 10 }}>AED</span>
+                  </p>
+                  <p style={{ fontSize: 10, color: "#5F5E5A", margin: "2px 0 6px", fontWeight: 700 }}>chez {retailer}</p>
+                  <div style={{ background: BLUE, color: "#fff", borderRadius: 10, padding: "6px 8px", fontSize: 11, fontWeight: 800, textAlign: "center" }}>
+                    Voir le deal ➔
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 🚀 VIP SUBSCRIPTION PUBLICITY BANNER */}
+      {goSubscription && (
+        <div
+          onClick={goSubscription}
+          className="ecm-card ecm-pulse ecm-btn-bounce"
+          style={{
+            background: "linear-gradient(135deg, #181818, #2D2D2D)",
+            color: "#fff",
+            borderRadius: 20,
+            padding: "18px 20px",
+            marginBottom: 24,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.15)"
+          }}
+        >
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+              <Sparkles size={16} color="#D4A843" />
+              <span style={{ fontSize: 12, fontWeight: 800, color: "#D4A843", textTransform: "uppercase", letterSpacing: 0.5 }}>Offre VIP Exclusive</span>
+            </div>
+            <p style={{ fontSize: 15, fontWeight: 800, margin: "0 0 4px" }}>Débloque +10,000 Deals Secrets</p>
+            <p style={{ fontSize: 12, color: "#A0A0A0", margin: 0, fontWeight: 500 }}>Alertes prix instantanées pour seulement 14.99 AED/mois</p>
+          </div>
+          <div style={{ background: "#D4A843", color: "#181818", borderRadius: 12, padding: "8px 12px", fontSize: 12, fontWeight: 800, flexShrink: 0, marginLeft: 10 }}>
+            Rejoindre VIP ➔
+          </div>
+        </div>
+      )}
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
         <p style={{ fontSize: 16, fontWeight: 800, margin: 0 }}>Categories</p>
@@ -1515,7 +1680,7 @@ export default function EasyCompareMarketPrototype() {
   const goBackToHome = () => setScreen("home");
 
   let content;
-  if (screen === "home") content = <HomeScreen goSearch={goSearch} goDetail={goDetail} activeCategory={activeCategory} setActiveCategory={setActiveCategory} />;
+  if (screen === "home") content = <HomeScreen goSearch={goSearch} goDetail={goDetail} goSubscription={goSubscription} activeCategory={activeCategory} setActiveCategory={setActiveCategory} />;
   else if (screen === "search") content = <SearchScreen goBack={goBackToHome} goDetail={goDetail} />;
   else if (screen === "detail") content = <DetailScreen product={detailProduct} goBack={() => setScreen(detailProduct && detailProduct.fromApi ? "search" : "home")} />;
   else if (screen === "alerts") content = <InstallScreen />;
