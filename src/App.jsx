@@ -144,13 +144,15 @@ function generateTrend(identifier) {
   return trend;
 }
 
+const AMAZON_AFFILIATE_TAG = "1004833073009-21";
+
 function getRetailerUrl(retailer, productName) {
   const query = encodeURIComponent(productName);
   const r = String(retailer).toLowerCase();
   if (r.includes("carrefour")) {
     return `https://www.carrefouruae.com/mafuae/en/search?keyword=${query}`;
   } else if (r.includes("amazon")) {
-    return `https://www.amazon.ae/s?k=${query}`;
+    return `https://www.amazon.ae/s?k=${query}&tag=${AMAZON_AFFILIATE_TAG}`;
   } else if (r.includes("lulu")) {
     return `https://www.luluhypermarket.com/en-ae/search/?text=${query}`;
   }
