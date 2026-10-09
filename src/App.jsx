@@ -15,27 +15,22 @@ import {
   Smartphone,
   Baby,
   Grid3x3,
-  CreditCard,
   Wallet,
   Wifi,
   WifiOff,
   Package,
   Clock,
   Share2,
-  Users,
   Flame,
   Gift,
   Download,
   ExternalLink,
-  Copy,
-  Apple
+  Copy
 } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
-  CardElement,
   useStripe,
-  useElements,
 } from "@stripe/react-stripe-js";
 
 // Uses Environment Variable if available, fallback to test key for demo
