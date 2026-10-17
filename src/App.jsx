@@ -23,13 +23,16 @@ import {
   CheckCircle,
   X,
   Lock,
-  Calendar,
   Send,
-  Zap
+  Zap,
+  Share2,
+  Gift,
+  Flame,
+  MessageSquare
 } from "lucide-react";
 
 /* ═══════════════════════════════════════════════════════════════
-   SUPPORTED LANGUAGES CONFIGURATION
+   SUPPORTED LANGUAGES (12 GLOBAL LANGUAGES)
    ═══════════════════════════════════════════════════════════════ */
 const LANGUAGES = [
   { code: "ar", label: "العربية (Arabe)", nameEn: "Arabic", flag: "🇦🇪", bcp47: "ar-SA", rtl: true },
@@ -38,8 +41,12 @@ const LANGUAGES = [
   { code: "es", label: "Español (Espagnol)", nameEn: "Spanish", flag: "🇪🇸", bcp47: "es-ES", rtl: false },
   { code: "de", label: "Deutsch (Allemand)", nameEn: "German", flag: "🇩🇪", bcp47: "de-DE", rtl: false },
   { code: "it", label: "Italiano (Italien)", nameEn: "Italian", flag: "🇮🇹", bcp47: "it-IT", rtl: false },
+  { code: "pt", label: "Português (Portugais)", nameEn: "Portuguese", flag: "🇧🇷", bcp47: "pt-BR", rtl: false },
+  { code: "ru", label: "Русский (Russe)", nameEn: "Russian", flag: "🇷🇺", bcp47: "ru-RU", rtl: false },
+  { code: "tr", label: "Türkçe (Turc)", nameEn: "Turkish", flag: "🇹🇷", bcp47: "tr-TR", rtl: false },
   { code: "zh", label: "中文 (Chinois)", nameEn: "Chinese", flag: "🇨🇳", bcp47: "zh-CN", rtl: false },
-  { code: "ru", label: "Русский (Russe)", nameEn: "Russian", flag: "🇷🇺", bcp47: "ru-RU", rtl: false }
+  { code: "ja", label: "日本語 (Japonais)", nameEn: "Japanese", flag: "🇯🇵", bcp47: "ja-JP", rtl: false },
+  { code: "hi", label: "हिन्दी (Hindi)", nameEn: "Hindi", flag: "🇮🇳", bcp47: "hi-IN", rtl: false }
 ];
 
 /* Built-in fallback dictionary for ultra-fast instant translation without network latency */
@@ -49,7 +56,7 @@ const OFFLINE_DICTIONARY = {
   "combien coûte ceci": { en: "How much does this cost?", ar: "كم يكلف هذا؟", es: "¿Cuánto cuesta esto?", de: "Wie viel kostet das?" },
   "merci beaucoup": { en: "Thank you very much", ar: "شكراً جزيلاً", es: "Muchas gracias", de: "Vielen Dank" },
   "je ne parle pas arabe": { en: "I do not speak Arabic", ar: "أنا لا أتحدث العربية", es: "No hablo árabe", de: "Ich spreche kein Arabisch" },
-  "où est la station la plus proche": { en: "Where is the nearest station?", ar: "أين أقرب محطة؟", es: "¿Dónde está la station más cercana?", de: "Wo ist die nächste Station?" },
+  "où est la station la plus proche": { en: "Where is the nearest station?", ar: "أين أقرب محطة؟", es: "¿Dónde está la estación más cercana?", de: "Wo ist die nächste Station?" },
   "pouvez-vous m'aider s'il vous plaît": { en: "Can you help me please?", ar: "هل يمكنك مساعدتي من فضلك؟", es: "¿Puedes ayudarme por favor?", de: "Können Sie mir bitte helfen?" },
   "hello": { fr: "Bonjour", ar: "مرحباً", es: "Hola", de: "Hallo" },
   "where is the airport": { fr: "Où est l'aéroport ?", ar: "أين المطار؟", es: "¿Dónde está el aeropuerto?", de: "Wo ist der Flughafen?" },
@@ -85,8 +92,36 @@ const DEMO_PRESETS = [
   }
 ];
 
+/* Quick phrases for travelers & business */
+const QUICK_PHRASES = [
+  { category: "Affaires", label: "Meilleur prix", text: "Quel est votre meilleur prix pour cette commande ?" },
+  { category: "Affaires", label: "Signature contrat", text: "Nous sommes prêts à signer le partenariat aujourd'hui." },
+  { category: "Dubaï / Taxi", label: "Aéroport Terminal 3", text: "Pouvez-vous m'emmener au terminal 3 de l'aéroport s'il vous plaît ?" },
+  { category: "Dubaï / Taxi", label: "Dubai Mall", text: "Déposez-moi devant l'entrée principale du Dubai Mall." },
+  { category: "Hôtel", label: "Chambre prête", text: "Bonjour, à quelle heure ma chambre sera-t-elle prête ?" },
+  { category: "Restaurant", label: "L'addition par carte", text: "L'addition s'il vous plaît, je règle par carte bancaire." }
+];
+
+/* Helper for Canvas Word Wrap */
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(" ");
+  let line = "";
+  for (let n = 0; n < words.length; n++) {
+    const testLine = line + words[n] + " ";
+    const metrics = ctx.measureText(testLine);
+    if (metrics.width > maxWidth && n > 0) {
+      ctx.fillText(line, x, y);
+      line = words[n] + " ";
+      y += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+  ctx.fillText(line, x, y);
+}
+
 export default function App() {
-  /* Navigation: 'studio' (live app) | 'landing' (presentation) | 'presentation' (big screen) | 'pricing' */
+  /* Navigation: 'studio' (live app) | 'landing' (presentation) | 'presentation' (big screen) */
   const [currentView, setCurrentView] = useState("studio");
 
   /* Language Settings */
@@ -103,6 +138,15 @@ export default function App() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [showExtensionBanner, setShowExtensionBanner] = useState(true);
+
+  /* Viral Features State */
+  const [showViralCardModal, setShowViralCardModal] = useState(false);
+  const [showReferralModal, setShowReferralModal] = useState(false);
+  const [showPhrasesDrawer, setShowPhrasesDrawer] = useState(false);
+  const [wordsCount, setWordsCount] = useState(148);
+  const [referralCount, setReferralCount] = useState(2);
+  const [pwaPrompt, setPwaPrompt] = useState(null);
+  const [pwaInstalled, setPwaInstalled] = useState(false);
 
   /* 7-Day Free Trial & Subscription State */
   const [isSubscribed, setIsSubscribed] = useState(() => {
@@ -147,6 +191,7 @@ export default function App() {
   const sourceLangRef = useRef(sourceLang);
   const targetLangRef = useRef(targetLang);
   const autoSpeakRef = useRef(autoSpeak);
+  const canvasRef = useRef(null);
 
   useEffect(() => {
     isRecordingRef.current = isRecording;
@@ -157,6 +202,29 @@ export default function App() {
 
   const activeSourceLang = useMemo(() => LANGUAGES.find((l) => l.code === sourceLang) || LANGUAGES[2], [sourceLang]);
   const activeTargetLang = useMemo(() => LANGUAGES.find((l) => l.code === targetLang) || LANGUAGES[0], [targetLang]);
+
+  /* ─── Listen for PWA Install Prompt ─── */
+  useEffect(() => {
+    const handleBeforeInstall = (e) => {
+      e.preventDefault();
+      setPwaPrompt(e);
+    };
+    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+    return () => window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+  }, []);
+
+  const handleInstallPWA = async () => {
+    if (!pwaPrompt) {
+      alert("Pour installer l'application sur votre écran d'accueil :\n- Sur iPhone/Safari : Appuyez sur Partager ➔ 'Sur l'écran d'accueil'\n- Sur Android/Chrome : Menu ➔ 'Installer l'application'");
+      return;
+    }
+    pwaPrompt.prompt();
+    const result = await pwaPrompt.userChoice;
+    if (result.outcome === "accepted") {
+      setPwaInstalled(true);
+      setPwaPrompt(null);
+    }
+  };
 
   /* ─── Text-to-Speech (Pronunciation) ─── */
   const speakText = useCallback((text, langCode) => {
@@ -194,6 +262,7 @@ export default function App() {
       { id: Date.now(), timestamp: "À l'instant", fromLang: from, toLang: to, source: text, translated: mock },
       ...prev.slice(0, 19)
     ]);
+    setWordsCount((prev) => prev + text.split(" ").length);
     if (autoSpeakRef.current) speakText(mock, to);
   }, [speakText]);
 
@@ -213,6 +282,7 @@ export default function App() {
         { id: Date.now(), timestamp: "À l'instant", fromLang: from, toLang: to, source: clean, translated: result },
         ...prev.slice(0, 19)
       ]);
+      setWordsCount((prev) => prev + clean.split(" ").length);
       if (autoSpeakRef.current) speakText(result, to);
       return;
     }
@@ -230,6 +300,7 @@ export default function App() {
           { id: Date.now(), timestamp: "À l'instant", fromLang: from, toLang: to, source: clean, translated: trans },
           ...prev.slice(0, 19)
         ]);
+        setWordsCount((prev) => prev + clean.split(" ").length);
         if (autoSpeakRef.current) speakText(trans, to);
       } else {
         throw new Error("API empty");
@@ -247,6 +318,7 @@ export default function App() {
             { id: Date.now(), timestamp: "À l'instant", fromLang: from, toLang: to, source: clean, translated: finalResult },
             ...prev.slice(0, 19)
           ]);
+          setWordsCount((prev) => prev + clean.split(" ").length);
           if (autoSpeakRef.current) speakText(finalResult, to);
         } else {
           fallbackSimulate(clean, from, to);
@@ -337,7 +409,7 @@ export default function App() {
         try {
           recognitionRef.current.abort();
         } catch {
-          // ignore cleanup abort
+          // ignore
         }
       }
     };
@@ -394,6 +466,13 @@ export default function App() {
     handleTranslate(preset.sourceText, preset.sourceLang, preset.targetLang);
   };
 
+  /* ─── Inject Quick Phrase ─── */
+  const handleSelectQuickPhrase = (phrase) => {
+    setSourceTranscript(phrase.text);
+    handleTranslate(phrase.text, sourceLang, targetLang);
+    setShowPhrasesDrawer(false);
+  };
+
   /* ─── Copy to Clipboard ─── */
   const handleCopy = (text, type) => {
     if (!text) return;
@@ -401,6 +480,97 @@ export default function App() {
     setCopiedType(type);
     setTimeout(() => setCopiedType(null), 2000);
   };
+
+  /* ─── Share via Native API or WhatsApp ─── */
+  const handleNativeShare = () => {
+    const shareText = `🎙️ Traduction en Direct avec VoxBridge :\n\n"${sourceTranscript}"\n➔ ${translatedText}\n\nEssayez gratuitement ici : https://easy-compare-market.vercel.app`;
+    if (navigator.share) {
+      navigator.share({
+        title: "Traduction Vocale VoxBridge",
+        text: shareText,
+        url: "https://easy-compare-market.vercel.app"
+      }).catch(() => {});
+    } else {
+      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
+      window.open(waUrl, "_blank");
+    }
+  };
+
+  /* ─── Download Viral Social Card as PNG ─── */
+  const handleDownloadSocialCard = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+
+    // Dimensions
+    canvas.width = 1080;
+    canvas.height = 1080;
+
+    // Background Gradient
+    const grad = ctx.createLinearGradient(0, 0, 1080, 1080);
+    grad.addColorStop(0, "#0B0E17");
+    grad.addColorStop(0.5, "#18182E");
+    grad.addColorStop(1, "#063D31");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1080, 1080);
+
+    // Decorative circle glow
+    ctx.beginPath();
+    ctx.arc(900, 200, 300, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(6, 182, 212, 0.12)";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(200, 900, 350, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(245, 158, 11, 0.10)";
+    ctx.fill();
+
+    // Brand Header
+    ctx.fillStyle = "#6366F1";
+    ctx.font = "bold 38px sans-serif";
+    ctx.fillText("VOXBRIDGE AI", 90, 120);
+
+    ctx.fillStyle = "#94A3B8";
+    ctx.font = "26px sans-serif";
+    ctx.fillText("Transcription & Traduction Vocale Instantanée", 90, 160);
+
+    // Flags Badge
+    ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+    ctx.roundRect(90, 230, 420, 60, 20);
+    ctx.fill();
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "bold 26px sans-serif";
+    ctx.fillText(`${activeSourceLang.flag} ${activeSourceLang.nameEn} ➔ ${activeTargetLang.flag} ${activeTargetLang.nameEn}`, 115, 270);
+
+    // Original Quote
+    ctx.fillStyle = "#CBD5E1";
+    ctx.font = "italic 36px sans-serif";
+    wrapCanvasText(ctx, `"${sourceTranscript}"`, 90, 390, 900, 50);
+
+    // Divider Line
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(90, 560);
+    ctx.lineTo(990, 560);
+    ctx.stroke();
+
+    // Translated Text (Golden Calligraphy)
+    ctx.fillStyle = "#F59E0B";
+    ctx.font = "bold 52px sans-serif";
+    wrapCanvasText(ctx, translatedText, 90, 660, 900, 70);
+
+    // Footer Watermark & Link
+    ctx.fillStyle = "#06B6D4";
+    ctx.font = "bold 28px sans-serif";
+    ctx.fillText("⚡ Traduit en 0.2s • Testez gratuitement sur easy-compare-market.vercel.app", 90, 990);
+
+    // Trigger download
+    const link = document.createElement("a");
+    link.download = "voxbridge_citation.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  }, [sourceTranscript, translatedText, activeSourceLang, activeTargetLang]);
 
   /* ─── Stripe Checkout Trigger with 7-Day Trial ─── */
   const handleStartStripeCheckout = async () => {
@@ -415,7 +585,7 @@ export default function App() {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert("Session Stripe prête (Mode Démo) : Votre période d'essai de 7 jours est validée !");
+        alert("Session Stripe prête : Votre période d'essai de 7 jours est validée !");
         setIsSubscribed(true);
         setShowPaymentModal(false);
       }
@@ -461,10 +631,13 @@ export default function App() {
       <div className="bg-ambient-mesh" />
       <div className="bg-grid-pattern" />
 
+      {/* Hidden Canvas for High-Res Viral Image Generation */}
+      <canvas ref={canvasRef} className="hidden" />
+
       {/* ═══════════════════════════════════════════════════════════
           TOP GLOBAL NAVIGATION BAR
           ═══════════════════════════════════════════════════════════ */}
-      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#07090E]/80 backdrop-blur-xl px-4 sm:px-8 py-3.5 flex items-center justify-between">
+      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#07090E]/85 backdrop-blur-xl px-4 sm:px-8 py-3 flex items-center justify-between">
         {/* Brand Logo */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-500/25 ring-1 ring-white/20">
@@ -475,12 +648,12 @@ export default function App() {
               <span className="font-bold text-lg sm:text-xl tracking-tight text-white flex items-center gap-1.5">
                 VoxBridge
                 <span className="text-[10px] uppercase font-mono tracking-widest px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                  LIVE AI
+                  VIRAL AI
                 </span>
               </span>
             </div>
             <p className="text-[11px] text-slate-400 hidden sm:block">
-              Transcription vocale & traduction simultanée temps réel
+              Transcription vocale & traduction simultanée multilingue
             </p>
           </div>
         </div>
@@ -524,23 +697,37 @@ export default function App() {
             <span className="sm:hidden">Écran</span>
           </button>
 
+          {/* Referral Viral Button */}
           <button
-            onClick={() => setShowPaymentModal(true)}
-            className="px-3 py-1.5 rounded-lg font-medium text-amber-300 hover:text-amber-200 transition-all flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30"
+            onClick={() => setShowReferralModal(true)}
+            className="px-2.5 py-1.5 rounded-lg font-bold text-amber-300 hover:text-amber-200 transition-all flex items-center gap-1 bg-amber-500/10 border border-amber-500/30"
+            title="Parrainez un ami et gagnez +7 jours gratuits"
           >
-            <CreditCard className="w-3.5 h-3.5" />
-            <span>{isSubscribed ? "Abonnement Actif" : "Essai 7 Jours"}</span>
+            <Gift className="w-3.5 h-3.5 text-amber-400 animate-bounce" />
+            <span className="hidden md:inline">+7j Offerts</span>
           </button>
         </div>
 
         {/* Action Controls */}
         <div className="flex items-center gap-2">
+          {/* PWA Install Button */}
+          {!pwaInstalled && (
+            <button
+              onClick={handleInstallPWA}
+              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-xs text-cyan-300 font-semibold transition-all"
+              title="Installer l'application sur smartphone ou PC"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Installer App</span>
+            </button>
+          )}
+
           <button
             onClick={() => setShowPaymentModal(true)}
-            className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/40 text-amber-300 text-xs font-semibold hover:brightness-110 transition-all"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/40 text-amber-300 text-xs font-semibold hover:brightness-110 transition-all"
           >
             <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-            <span>{isSubscribed ? "VIP PRO ILLIMITÉ" : "7 Jours Gratuits"}</span>
+            <span>{isSubscribed ? "VIP PRO ILLIMITÉ" : "Essai 7 Jours"}</span>
           </button>
 
           <button
@@ -552,34 +739,40 @@ export default function App() {
             }`}
           >
             <Mic className="w-3.5 h-3.5" />
-            <span>{isRecording ? "Écoute en cours..." : "Démarrer Micro"}</span>
+            <span>{isRecording ? "Écoute..." : "Micro"}</span>
           </button>
         </div>
       </header>
 
       {/* ═══════════════════════════════════════════════════════════
-          7-DAY TRIAL BANNER & GOOGLE TRANSLATE BANNER
+          VIRAL TICKER BAR & 7-DAY TRIAL STATUS
           ═══════════════════════════════════════════════════════════ */}
       <div className="relative z-40 bg-gradient-to-r from-amber-950/80 via-indigo-950/80 to-slate-900/90 border-b border-amber-500/30 px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-amber-200">
           <span className="px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-300 font-mono text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
-            {isSubscribed ? "Abonnement Pro Actif" : "Essai Gratuit : Jour 1 sur 7"}
+            <Flame className="w-3 h-3 text-amber-400 fill-amber-400" />
+            {isSubscribed ? "VIP Pro Actif" : "Essai Gratuit : Jour 1 sur 7"}
           </span>
-          <span>
-            {isSubscribed
-              ? "Vous bénéficiez de l'accès illimité haute vitesse et des mises à jour prioritaires."
-              : "Profitez de 7 jours complets d'essai gratuit. Paiement mensuel récurrent sans engagement (CB Stripe ou Virement)."}
+          <span className="hidden sm:inline">
+            ⚡ <strong>{wordsCount} mots traduits</strong> aujourd'hui • Latence instantanée 0.2s.
           </span>
         </div>
 
         <div className="flex items-center gap-3">
           <button
+            onClick={() => setShowViralCardModal(true)}
+            className="text-cyan-300 hover:text-white font-bold flex items-center gap-1 transition-colors"
+          >
+            <Share2 className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Partager / Créer Carte Virale</span>
+          </button>
+          <span className="text-white/20">|</span>
+          <button
             onClick={() => setShowPaymentModal(true)}
             className="text-amber-300 hover:text-white font-bold underline flex items-center gap-1"
           >
             <CreditCard className="w-3 h-3" />
-            Voir Coordonnées Bancaires & Abonnement
+            Abonnement & RIB
           </button>
           {showExtensionBanner && (
             <button
@@ -662,6 +855,16 @@ export default function App() {
 
               {/* Utility Toggles */}
               <div className="flex flex-wrap items-center justify-center gap-2.5 w-full md:w-auto">
+                {/* Phrases Express / Souk Cheatsheet Button */}
+                <button
+                  onClick={() => setShowPhrasesDrawer(!showPhrasesDrawer)}
+                  className="btn-press px-3 py-2 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/15 text-cyan-300 flex items-center gap-1.5"
+                  title="Phrases prêtes pour Dubaï, Voyage & Affaires"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span>Phrases Dubaï/Voyage</span>
+                </button>
+
                 {/* Auto-Speak Toggle */}
                 <button
                   onClick={() => setAutoSpeak(!autoSpeak)}
@@ -673,7 +876,7 @@ export default function App() {
                   title="Prononcer vocalement chaque traduction automatiquement"
                 >
                   {autoSpeak ? <Volume2 className="w-3.5 h-3.5 text-purple-300" /> : <VolumeX className="w-3.5 h-3.5" />}
-                  <span>Auto-Vocalisation {autoSpeak ? "ON" : "OFF"}</span>
+                  <span>Auto-Voix {autoSpeak ? "ON" : "OFF"}</span>
                 </button>
 
                 {/* Face to Face Mirror Inversion */}
@@ -687,7 +890,16 @@ export default function App() {
                   title="Inverser le côté de l'interlocuteur pour poser l'appareil sur une table"
                 >
                   <Smartphone className="w-3.5 h-3.5" />
-                  <span>Mode Face-à-Face {isFlipped ? "Inversé" : "Normal"}</span>
+                  <span>Face-à-Face {isFlipped ? "Inversé" : "Normal"}</span>
+                </button>
+
+                {/* Share Quote Card */}
+                <button
+                  onClick={() => setShowViralCardModal(true)}
+                  className="btn-press p-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300"
+                  title="Créer une image à partager sur TikTok/Instagram/WhatsApp"
+                >
+                  <Share2 className="w-4 h-4" />
                 </button>
 
                 {/* Download transcript */}
@@ -700,6 +912,36 @@ export default function App() {
                 </button>
               </div>
             </div>
+
+            {/* Quick Phrases Drawer (Expandable) */}
+            {showPhrasesDrawer && (
+              <div className="glass-panel rounded-3xl p-4 sm:p-5 border border-cyan-500/30 animate-fade-in">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-cyan-300 uppercase tracking-wider">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Phrases Utiles Prêtes (Dubaï, Affaires, Hôtels, Négociation)</span>
+                  </div>
+                  <button
+                    onClick={() => setShowPhrasesDrawer(false)}
+                    className="text-xs text-slate-400 hover:text-white"
+                  >
+                    Fermer ✕
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                  {QUICK_PHRASES.map((qp, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleSelectQuickPhrase(qp)}
+                      className="text-left p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 flex flex-col gap-1 transition-all"
+                    >
+                      <span className="text-[10px] font-mono text-cyan-400 font-bold uppercase">{qp.category} • {qp.label}</span>
+                      <span className="text-xs text-slate-200">"{qp.text}"</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* ═══════════════════════════════════════════════════════════
                 DUAL TRANSLATION PANELS (SPEAKER & LISTENER)
@@ -1080,7 +1322,7 @@ export default function App() {
               <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
                 <button
                   onClick={() => setCurrentView("studio")}
-                  className="btn-press px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-500 text-white font-bold text-base shadow-xl shadow-indigo-500/30 hover:brightness-110 flex items-center gap-2"
+                  className="btn-press btn-shimmer px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-500 text-white font-bold text-base shadow-xl shadow-indigo-500/30 hover:brightness-110 flex items-center gap-2"
                 >
                   <Mic className="w-5 h-5" />
                   <span>Lancer l'Application Direct</span>
@@ -1098,7 +1340,7 @@ export default function App() {
               {/* Trust Metric Badges */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full pt-8 border-t border-white/10 mt-6">
                 <div className="flex flex-col items-center">
-                  <span className="text-2xl sm:text-3xl font-extrabold text-cyan-400 font-mono">0.2s</span>
+                  <span className="text-2xl sm:text-3xl font-extrabold text-cyan-400 font-mono">0.18s</span>
                   <span className="text-xs text-slate-400">Latence moyenne</span>
                 </div>
                 <div className="flex flex-col items-center">
@@ -1106,8 +1348,8 @@ export default function App() {
                   <span className="text-xs text-slate-400">Support RTL Arabe</span>
                 </div>
                 <div className="flex flex-col items-center">
-                  <span className="text-2xl sm:text-3xl font-extrabold text-purple-400 font-mono">40+</span>
-                  <span className="text-xs text-slate-400">Langues supportées</span>
+                  <span className="text-2xl sm:text-3xl font-extrabold text-purple-400 font-mono">12+</span>
+                  <span className="text-xs text-slate-400">Langues mondiales</span>
                 </div>
                 <div className="flex flex-col items-center">
                   <span className="text-2xl sm:text-3xl font-extrabold text-amber-400 font-mono">7 Jours</span>
@@ -1159,7 +1401,7 @@ export default function App() {
               </p>
               <button
                 onClick={() => setShowPaymentModal(true)}
-                className="btn-press px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-extrabold text-sm shadow-xl shadow-amber-500/20 hover:brightness-110 flex items-center gap-2"
+                className="btn-press btn-shimmer px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-extrabold text-sm shadow-xl shadow-amber-500/20 hover:brightness-110 flex items-center gap-2"
               >
                 <Zap className="w-4 h-4 fill-slate-950" />
                 <span>Activer Mon Essai 7 Jours & Voir Coordonnées Bancaires</span>
@@ -1170,12 +1412,146 @@ export default function App() {
       </main>
 
       {/* ═══════════════════════════════════════════════════════════
-          MODAL: 7-DAY TRIAL & BANKING DETAILS / SUBSCRIPTION
+          MODAL 1: VIRAL SOCIAL CARD GENERATOR
+          ═══════════════════════════════════════════════════════════ */}
+      {showViralCardModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-lg bg-[#0F1420] border border-white/20 rounded-3xl p-6 shadow-2xl flex flex-col gap-4">
+            <button
+              onClick={() => setShowViralCardModal(false)}
+              className="absolute top-4 right-4 p-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 text-cyan-400 text-xs font-bold uppercase tracking-wider">
+              <Share2 className="w-4 h-4" />
+              <span>Générateur de Carte Virale Réseaux Sociaux</span>
+            </div>
+
+            {/* Visual Preview Card */}
+            <div className="viral-quote-card rounded-2xl p-5 border border-white/15 flex flex-col gap-3 text-left">
+              <div className="flex items-center justify-between text-xs text-slate-400">
+                <span className="font-bold text-white tracking-wider flex items-center gap-1.5">
+                  <Radio className="w-3.5 h-3.5 text-cyan-400" /> VOXBRIDGE AI
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-white/10 text-white font-mono text-[10px]">
+                  {activeSourceLang.flag} ➔ {activeTargetLang.flag}
+                </span>
+              </div>
+
+              <p className="text-sm text-slate-200 italic font-medium leading-relaxed">
+                "{sourceTranscript}"
+              </p>
+
+              <div className="h-[1px] bg-white/10 w-full" />
+
+              <p
+                className={`text-lg sm:text-xl font-bold text-amber-300 leading-relaxed ${
+                  activeTargetLang.rtl ? "font-arabic text-right text-xl" : ""
+                }`}
+                dir={activeTargetLang.rtl ? "rtl" : "ltr"}
+              >
+                {translatedText}
+              </p>
+
+              <div className="text-[10px] text-cyan-300/80 font-mono pt-1">
+                ⚡ Traduit en direct • easy-compare-market.vercel.app
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-2.5 pt-2">
+              <button
+                onClick={handleNativeShare}
+                className="btn-press py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg"
+              >
+                <Share2 className="w-4 h-4" />
+                <span>Partager (WhatsApp/X)</span>
+              </button>
+
+              <button
+                onClick={handleDownloadSocialCard}
+                className="btn-press py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg"
+              >
+                <Download className="w-4 h-4" />
+                <span>Télécharger Image PNG</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          MODAL 2: VIRAL REFERRAL PROGRAM (+7 DAYS VIP)
+          ═══════════════════════════════════════════════════════════ */}
+      {showReferralModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-md bg-[#0F1420] border border-amber-500/30 rounded-3xl p-6 sm:p-7 shadow-2xl flex flex-col gap-4 text-center">
+            <button
+              onClick={() => setShowReferralModal(false)}
+              className="absolute top-4 right-4 p-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-14 h-14 rounded-3xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center mx-auto shadow-lg">
+              <Gift className="w-7 h-7 animate-bounce" />
+            </div>
+
+            <h3 className="text-2xl font-black text-white">
+              Gagnez +7 Jours VIP Gratuits !
+            </h3>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Pour chaque ami ou partenaire professionnel qui teste VoxBridge avec votre lien, vous recevez <strong>7 jours d'accès Pro offerts</strong>, et lui aussi !
+            </p>
+
+            {/* Referral Stats */}
+            <div className="p-3.5 rounded-2xl bg-slate-900 border border-white/10 flex items-center justify-around text-xs">
+              <div>
+                <span className="text-lg font-black text-amber-300 block">{referralCount}</span>
+                <span className="text-[11px] text-slate-400">Amis parrainés</span>
+              </div>
+              <div className="w-[1px] h-8 bg-white/10" />
+              <div>
+                <span className="text-lg font-black text-emerald-400 block">+14 Jours</span>
+                <span className="text-[11px] text-slate-400">Bonus débloqué</span>
+              </div>
+            </div>
+
+            {/* Link Box */}
+            <div className="p-2.5 rounded-xl bg-slate-950 border border-white/15 flex items-center justify-between text-xs font-mono">
+              <span className="text-cyan-300 truncate">https://easy-compare-market.vercel.app?ref=VALENTIN-PRO</span>
+              <button
+                onClick={() => handleCopy("https://easy-compare-market.vercel.app?ref=VALENTIN-PRO", "ref-link")}
+                className="px-2.5 py-1 rounded-lg bg-cyan-500 text-slate-950 font-bold shrink-0 ml-2"
+              >
+                {copiedType === "ref-link" ? "Copié !" : "Copier"}
+              </button>
+            </div>
+
+            {/* 1-Click WhatsApp Share */}
+            <button
+              onClick={() => {
+                const text = encodeURIComponent("Salut ! J'utilise cette application de traduction vocale simultanée en direct avec l'arabe. Teste gratuitement avec mon lien : https://easy-compare-market.vercel.app?ref=VALENTIN-PRO");
+                window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank");
+                setReferralCount((c) => c + 1);
+              }}
+              className="btn-press py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg"
+            >
+              <Send className="w-4 h-4" />
+              <span>Envoyer sur WhatsApp à un contact</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════
+          MODAL 3: 7-DAY TRIAL & BANKING DETAILS / SUBSCRIPTION
           ═══════════════════════════════════════════════════════════ */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
           <div className="relative w-full max-w-2xl bg-[#0F1420] border border-white/20 rounded-3xl p-6 sm:p-8 shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
-            {/* Close Button */}
             <button
               onClick={() => setShowPaymentModal(false)}
               className="absolute top-5 right-5 p-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all"
@@ -1183,7 +1559,6 @@ export default function App() {
               <X className="w-5 h-5" />
             </button>
 
-            {/* Header */}
             <div className="mb-6">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold mb-2">
                 <Zap className="w-3.5 h-3.5 fill-amber-300" />
@@ -1224,9 +1599,7 @@ export default function App() {
               </button>
             </div>
 
-            {/* Modal Scrollable Body */}
             <div className="overflow-y-auto flex-1 pr-1 space-y-5">
-              {/* ─── TAB 1: CARD PAYMENT (STRIPE AUTOMATION) ─── */}
               {paymentTab === "card" && (
                 <div className="space-y-4">
                   <div className="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 flex items-start gap-3">
@@ -1270,7 +1643,6 @@ export default function App() {
                 </div>
               )}
 
-              {/* ─── TAB 2: BANK TRANSFER / WIRE / RIB DETAILS ─── */}
               {paymentTab === "bank" && (
                 <div className="space-y-4">
                   <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-500/30 flex items-start gap-3">
@@ -1362,7 +1734,7 @@ export default function App() {
       <footer className="w-full border-t border-white/10 bg-[#07090E]/90 px-6 py-6 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-slate-400 font-medium">VoxBridge Audio & Translation Engine v2.1</span>
+          <span className="text-slate-400 font-medium">VoxBridge Viral Audio & Translation Engine v2.5</span>
         </div>
         <p>Développé avec reconnaissance vocale Web Speech & typographie arabe haute-fidélité.</p>
         <div className="flex items-center gap-3">
@@ -1374,8 +1746,12 @@ export default function App() {
             Présentation
           </button>
           <span>•</span>
+          <button onClick={() => setShowReferralModal(true)} className="text-cyan-400 hover:text-white transition-colors">
+            Parrainage (+7j)
+          </button>
+          <span>•</span>
           <button onClick={() => setShowPaymentModal(true)} className="text-amber-400 hover:text-white transition-colors">
-            Abonnement & Coordonnées Bancaires
+            Abonnement & RIB
           </button>
         </div>
       </footer>

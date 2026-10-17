@@ -234,3 +234,50 @@ html, body {
 .btn-press:active {
   transform: scale(0.96);
 }
+
+/* ─── Viral Growth & Social Card Elements ─── */
+@keyframes rainbow-border {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.viral-gradient-border {
+  position: relative;
+  background: linear-gradient(60deg, #6366F1, #06B6D4, #8B5CF6, #F59E0B, #10B981);
+  background-size: 300% 300%;
+  animation: rainbow-border 4s ease infinite;
+  padding: 2px;
+  border-radius: 1.5rem;
+}
+.viral-gradient-inner {
+  background: #0B0F19;
+  border-radius: calc(1.5rem - 2px);
+  width: 100%;
+  height: 100%;
+}
+
+/* Shimmer effect for CTAs */
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 50%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  transform: skewX(-20deg);
+  animation: shimmer-sweep 3s infinite;
+}
+
+/* Share preview card */
+.viral-quote-card {
+  background: linear-gradient(135deg, rgba(30, 27, 75, 0.95), rgba(15, 23, 42, 0.95), rgba(6, 78, 59, 0.8));
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 40px rgba(99, 102, 241, 0.25);
+}
+
