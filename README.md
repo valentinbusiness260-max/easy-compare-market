@@ -1,16 +1,62 @@
-# React + Vite
+# VoxBridge — Transcription & Traduction Vocale en Direct 🎙️🌐
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Application web progressive (PWA) cinématographique et ultra-réactive de **transcription vocale continue** et de **traduction simultanée multilingue** (Français, Arabe avec support RTL complet, Anglais, Espagnol, etc.) intégrant un **essai gratuit de 7 jours**, un système d'abonnement Stripe et les coordonnées bancaires professionnelles.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🌟 Fonctionnalités Clés
 
-## React Compiler
+1. **🎙️ Studio de Reconnaissance Vocale en Continu**
+   - Moteur Web Speech API temps réel avec retranscription mot à mot (*interim speech results*).
+   - Onde sonore animée (*sound wave visualizer*) réagissant à l'état du micro.
+   - 4 raccourcis d'essais en 1 clic pour tester immédiatement sans micro.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+2. **🌍 Traduction Instantanée & Typographie Arabe Pure**
+   - Prise en charge bidirectionnelle : Français ➔ Arabe, Anglais ➔ Arabe, Arabe ➔ Français, etc.
+   - Affichage RTL (*Right-to-Left*) natif avec la police Google **Cairo** pour un rendu élégant.
+   - Moteur hybride : Dictionnaire local instantané + API MyMemory + Fallback Google Translator.
 
-## Expanding the Oxlint configuration
+3. **🔄 Mode Conversation Face-à-Face Inversé**
+   - Bouton de bascule 180° pour poser un téléphone ou une tablette au milieu d'une table entre deux personnes parlant des langues différentes.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+4. **🔊 Vocalisation Native (Text-to-Speech)**
+   - Prononciation à voix haute des traductions avec voix et accents natifs (`ar-SA`, `en-US`, `fr-FR`).
+   - Mode auto-vocalisation débrayable.
+
+5. **⏳ Essai Gratuit de 7 Jours & Monétisation**
+   - Période d'essai de 7 jours offerte sans engagement.
+   - Paiement sécurisé par **Carte Bancaire (Stripe Checkout)** configuré avec `trial_period_days: 7`.
+   - Virement Bancaire Direct (RIB / IBAN professionnel international).
+   - Webhook Vercel avec notifications automatiques vers `provalentin883@gmail.com`.
+
+6. **🖥️ Mode Conférence / Grand Écran & Landing Page**
+   - Mode sous-titres géants pour vidéoconférences ou présentations publiques.
+   - Landing page vitrine haut de gamme avec métriques de confiance et cas d'usage (Dubaï, Tourisme, Médical).
+
+---
+
+## 🚀 Installation & Développement Local
+
+```bash
+# Installer les dépendances
+npm install
+
+# Démarrer le serveur de développement
+npm run dev
+
+# Tester la qualité du code (0 warning, 0 error)
+npm run lint
+
+# Compiler pour la production
+npm run build
+```
+
+---
+
+## ☁️ Déploiement Vercel
+
+Le projet est configuré pour un déploiement continu sur Vercel avec fonctions serverless `/api` :
+```bash
+# Déploiement direct
+npx vercel --prod
+```

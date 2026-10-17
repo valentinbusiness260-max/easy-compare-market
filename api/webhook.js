@@ -38,22 +38,24 @@ export default async function handler(req, res) {
     
     // Call Resend API or any other email service to notify the owner
     const email = process.env.NOTIFICATION_EMAIL || 'provalentin883@gmail.com';
-    console.log(`Payment successful for session ${session.id}. Send email to ${email}`);
+    console.log(`Payment / Trial started for session ${session.id}. Send email to ${email}`);
     
     try {
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          from: 'Acme <onboarding@resend.dev>',
-          to: [email],
-          subject: 'Nouveau Paiement Premium ! 💰',
-          html: `<strong>Félicitations !</strong> Un nouveau client vient de s'abonner au plan Premium (14.99 AED) sur Easy Compare Market.`
-        })
-      });
+      if (process.env.RESEND_API_KEY) {
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            from: 'VoxBridge <notifications@voxbridge.ai>',
+            to: [email],
+            subject: '🎉 Nouvel Abonné VoxBridge Pro (Essai 7 Jours Activé) !',
+            html: `<strong>Félicitations !</strong> Un nouveau client vient de démarrer son abonnement VoxBridge Pro (Essai 7 jours activé, puis 29 AED/mois).<br/><br/>Session ID: ${session.id}<br/>Client Email: ${session.customer_details?.email || 'N/A'}`
+          })
+        });
+      }
     } catch (e) {
       console.error("Erreur lors de l'envoi de l'email", e);
     }
