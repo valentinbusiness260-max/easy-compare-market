@@ -1,1760 +1,1672 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import {
-  Mic,
-  MicOff,
-  Volume2,
-  VolumeX,
-  Copy,
+  ShoppingBag,
+  ArrowLeftRight,
+  Search,
+  Scan,
+  ScanLine,
+  Bell,
+  User,
+  Home,
+  ChevronRight,
+  ChevronLeft,
   Check,
-  RotateCcw,
+  Droplet,
   Sparkles,
-  ArrowRightLeft,
-  Download,
-  Clock,
-  Globe,
-  Radio,
   Smartphone,
-  Layers,
-  ShieldCheck,
-  Headphones,
-  Laptop,
-  CreditCard,
-  Building,
-  CheckCircle,
-  X,
-  Lock,
-  Send,
-  Zap,
+  Baby,
+  Grid3x3,
+  Wallet,
+  Wifi,
+  WifiOff,
+  Package,
+  Clock,
   Share2,
-  Gift,
   Flame,
-  MessageSquare
+  Gift,
+  Download,
+  ExternalLink,
+  Copy
 } from "lucide-react";
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  Elements,
+  useStripe,
+} from "@stripe/react-stripe-js";
 
-/* ═══════════════════════════════════════════════════════════════
-   SUPPORTED LANGUAGES (12 GLOBAL LANGUAGES)
-   ═══════════════════════════════════════════════════════════════ */
-const LANGUAGES = [
-  { code: "ar", label: "العربية (Arabe)", nameEn: "Arabic", flag: "🇦🇪", bcp47: "ar-SA", rtl: true },
-  { code: "en", label: "English (Anglais)", nameEn: "English", flag: "🇬🇧", bcp47: "en-US", rtl: false },
-  { code: "fr", label: "Français (French)", nameEn: "French", flag: "🇫🇷", bcp47: "fr-FR", rtl: false },
-  { code: "es", label: "Español (Espagnol)", nameEn: "Spanish", flag: "🇪🇸", bcp47: "es-ES", rtl: false },
-  { code: "de", label: "Deutsch (Allemand)", nameEn: "German", flag: "🇩🇪", bcp47: "de-DE", rtl: false },
-  { code: "it", label: "Italiano (Italien)", nameEn: "Italian", flag: "🇮🇹", bcp47: "it-IT", rtl: false },
-  { code: "pt", label: "Português (Portugais)", nameEn: "Portuguese", flag: "🇧🇷", bcp47: "pt-BR", rtl: false },
-  { code: "ru", label: "Русский (Russe)", nameEn: "Russian", flag: "🇷🇺", bcp47: "ru-RU", rtl: false },
-  { code: "tr", label: "Türkçe (Turc)", nameEn: "Turkish", flag: "🇹🇷", bcp47: "tr-TR", rtl: false },
-  { code: "zh", label: "中文 (Chinois)", nameEn: "Chinese", flag: "🇨🇳", bcp47: "zh-CN", rtl: false },
-  { code: "ja", label: "日本語 (Japonais)", nameEn: "Japanese", flag: "🇯🇵", bcp47: "ja-JP", rtl: false },
-  { code: "hi", label: "हिन्दी (Hindi)", nameEn: "Hindi", flag: "🇮🇳", bcp47: "hi-IN", rtl: false }
+// Uses Environment Variable if available, fallback to test key for demo
+const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || "pk_test_51UO67QQZ4erOPMFkrioLYbDWoWFyiZXtqP1nUGJBGbO2JhgOTRK78JQ9pLB2yx7queAKVB2iehCCyGl2jnihWyUn005XNVatKZ";
+const stripePromise = loadStripe(stripeKey);
+
+/* ═══════════════════ DESIGN TOKENS ═══════════════════ */
+const BLUE = "#1568C0";
+const BLUE_DARK = "#0C447C";
+const INK = "#181818";
+const PAPER = "#F7F6F2";
+
+/* ═══════════════════ STATIC DATA ═══════════════════ */
+const CATEGORIES = [
+  { id: "water", label: "Water", icon: Droplet, color: "#1568C0", bg: "#E2F1FC", active: true },
+  { id: "grocery", label: "Grocery", icon: ShoppingBag, color: "#D85A30", bg: "#FCEEE8", active: true },
+  { id: "home", label: "Home", icon: Sparkles, color: "#0F6E56", bg: "#E3F5EE", active: true },
+  { id: "tech", label: "Tech", icon: Smartphone, color: "#854F0B", bg: "#FEF3DD", active: true },
+  { id: "baby", label: "Baby", icon: Baby, color: "#993556", bg: "#FBEAF0", active: true },
+  { id: "all", label: "See all", icon: Grid3x3, color: "#534AB7", bg: "#EEEDFE", active: true },
 ];
 
-/* Built-in fallback dictionary for ultra-fast instant translation without network latency */
-const OFFLINE_DICTIONARY = {
-  "bonjour": { en: "Hello", ar: "مرحباً", es: "Hola", de: "Hallo" },
-  "comment allez-vous": { en: "How are you?", ar: "كيف حالك؟", es: "¿Cómo estás?", de: "Wie geht es Ihnen?" },
-  "combien coûte ceci": { en: "How much does this cost?", ar: "كم يكلف هذا؟", es: "¿Cuánto cuesta esto?", de: "Wie viel kostet das?" },
-  "merci beaucoup": { en: "Thank you very much", ar: "شكراً جزيلاً", es: "Muchas gracias", de: "Vielen Dank" },
-  "je ne parle pas arabe": { en: "I do not speak Arabic", ar: "أنا لا أتحدث العربية", es: "No hablo árabe", de: "Ich spreche kein Arabisch" },
-  "où est la station la plus proche": { en: "Where is the nearest station?", ar: "أين أقرب محطة؟", es: "¿Dónde está la estación más cercana?", de: "Wo ist die nächste Station?" },
-  "pouvez-vous m'aider s'il vous plaît": { en: "Can you help me please?", ar: "هل يمكنك مساعدتي من فضلك؟", es: "¿Puedes ayudarme por favor?", de: "Können Sie mir bitte helfen?" },
-  "hello": { fr: "Bonjour", ar: "مرحباً", es: "Hola", de: "Hallo" },
-  "where is the airport": { fr: "Où est l'aéroport ?", ar: "أين المطار؟", es: "¿Dónde está el aeropuerto?", de: "Wo ist der Flughafen?" },
-  "i would like to order food": { fr: "Je voudrais commander à manger", ar: "أود أن أطلب الطعام", es: "Me gustaría pedir comida", de: "Ich möchte Essen bestellen" },
-  "nice to meet you": { fr: "Ravi de vous rencontrer", ar: "تشرفت بلقائك", es: "Mucho gusto", de: "Schön, Sie kennenzulernen" }
-};
-
-/* Demo presets for fast 1-click test */
-const DEMO_PRESETS = [
+const LOCAL_PRODUCTS = [
+  // Water
   {
-    title: "FR ➔ Arabe (Commerce / Négociation)",
-    sourceLang: "fr",
-    targetLang: "ar",
-    sourceText: "Bonjour Monsieur, pouvez-vous m'indiquer le prix total avec la livraison s'il vous plaît ?"
+    id: "masafi-500", category: "water", name: "Masafi Mineral Water 500ml x12", brand: "Masafi",
+    trend: [58, 62, 60, 68, 50, 40, 32], prices: { Carrefour: 10.5, "Amazon.ae": 13.9, Lulu: 14.25 },
+    oldPrice: 16.5, promo: "#1 BESTSELLER", image_url: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=200&h=200&fit=crop"
   },
   {
-    title: "EN ➔ Arabe (Accueil à Dubaï)",
-    sourceLang: "en",
-    targetLang: "ar",
-    sourceText: "Welcome to Dubai! Your driver is waiting outside the airport terminal."
+    id: "alain-1500", category: "water", name: "Al Ain Water 1.5L x6", brand: "Al Ain",
+    trend: [40, 45, 42, 50, 48, 44, 38], prices: { "Amazon.ae": 12.6, Carrefour: 15.2, Lulu: 15.9 },
+    oldPrice: 18.0, promo: "-30% OFF", image_url: "https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=200&h=200&fit=crop"
+  },
+  // Grocery
+  {
+    id: "basmati-rice", category: "grocery", name: "Tilda Pure Basmati Rice 5kg", brand: "Tilda",
+    trend: [150, 145, 148, 140, 130, 125, 120], prices: { Lulu: 45.5, Carrefour: 52.0, "Amazon.ae": 50.0 },
+    oldPrice: 65.0, promo: "HOT DEAL 🔥", image_url: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=200&h=200&fit=crop"
   },
   {
-    title: "FR ➔ Anglais (Réunion Pro)",
-    sourceLang: "fr",
-    targetLang: "en",
-    sourceText: "Notre équipe a finalisé la plateforme de traduction et les résultats sont excellents."
+    id: "nutella-750", category: "grocery", name: "Nutella Hazelnut Spread 750g", brand: "Nutella",
+    trend: [80, 82, 75, 70, 72, 65, 60], prices: { Carrefour: 22.5, "Amazon.ae": 24.0, Lulu: 26.5 },
+    oldPrice: 32.0, promo: "-25% OFF", image_url: "https://images.unsplash.com/photo-1588661668264-a032890fc2f1?w=200&h=200&fit=crop"
   },
   {
-    title: "Arabe ➔ Français (Réponse Client)",
-    sourceLang: "ar",
-    targetLang: "fr",
-    sourceText: "شكراً جزيلاً لك، أنا سعيد جداً بالتعامل معكم وسأقوم بالدفع الآن."
+    id: "nescafe-gold", category: "grocery", name: "Nescafe Gold Instant Coffee 200g", brand: "Nescafe",
+    trend: [45, 42, 40, 38, 35, 32, 30], prices: { "Amazon.ae": 28.5, Carrefour: 31.0, Lulu: 33.5 },
+    oldPrice: 39.0, promo: "BESTSELLER ⭐", image_url: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=200&h=200&fit=crop"
+  },
+  // Home
+  {
+    id: "fairy-lemon", category: "home", name: "Fairy Dishwashing Liquid 1L", brand: "Fairy",
+    trend: [30, 28, 25, 22, 20, 18, 15], prices: { "Amazon.ae": 12.0, Carrefour: 14.5, Lulu: 15.0 },
+    oldPrice: 19.5, promo: "-40% OFF", image_url: "https://images.unsplash.com/photo-1585233157597-9e776e0e3b97?w=200&h=200&fit=crop"
+  },
+  {
+    id: "tide-pods", category: "home", name: "Tide Pods 3-in-1 Laundry, 30 Pack", brand: "Tide",
+    trend: [90, 85, 80, 75, 70, 65, 60], prices: { Carrefour: 40.0, Lulu: 45.0, "Amazon.ae": 48.0 },
+    oldPrice: 60.0, promo: "FLASH DEAL", image_url: "https://images.unsplash.com/photo-1585233157597-9e776e0e3b97?w=200&h=200&fit=crop"
+  },
+  {
+    id: "nespresso-machine", category: "home", name: "Nespresso Essenza Mini Coffee Machine", brand: "Nespresso",
+    trend: [450, 430, 410, 390, 370, 350, 340], prices: { "Amazon.ae": 329.0, Carrefour: 349.0, Lulu: 379.0 },
+    oldPrice: 449.0, promo: "TOP OFFER 🔥", image_url: "https://images.unsplash.com/photo-1517668808822-9e428824603b?w=200&h=200&fit=crop"
+  },
+  // Tech
+  {
+    id: "airpods-pro", category: "tech", name: "Apple AirPods Pro (2nd Gen)", brand: "Apple",
+    trend: [950, 920, 900, 880, 850, 820, 790], prices: { "Amazon.ae": 750.0, Carrefour: 799.0, Lulu: 820.0 },
+    oldPrice: 999.0, promo: "#1 TECH BESTSELLER", image_url: "https://images.unsplash.com/photo-1606220588913-b3aacb4d2f46?w=200&h=200&fit=crop"
+  },
+  {
+    id: "iphone-15-pro", category: "tech", name: "iPhone 15 Pro 128GB Natural Titanium", brand: "Apple",
+    trend: [4300, 4250, 4100, 4000, 3900, 3850, 3799], prices: { "Amazon.ae": 3699.0, Carrefour: 3799.0, Lulu: 3849.0 },
+    oldPrice: 4299.0, promo: "SAVE 600 AED", image_url: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=200&h=200&fit=crop"
+  },
+  {
+    id: "samsung-s24", category: "tech", name: "Samsung Galaxy S24 Ultra 256GB", brand: "Samsung",
+    trend: [5000, 4800, 4600, 4400, 4200, 4100, 3999], prices: { "Amazon.ae": 3899.0, Carrefour: 3999.0, Lulu: 4099.0 },
+    oldPrice: 4999.0, promo: "BEST DEAL ⭐", image_url: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=200&h=200&fit=crop"
+  },
+  // Baby
+  {
+    id: "pampers-premium", category: "baby", name: "Pampers Premium Care Diapers, Size 4", brand: "Pampers",
+    trend: [110, 105, 100, 95, 90, 85, 80], prices: { Lulu: 65.0, Carrefour: 70.0, "Amazon.ae": 72.0 },
+    oldPrice: 95.0, promo: "HOT DEAL", image_url: "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=200&h=200&fit=crop"
   }
 ];
 
-/* Quick phrases for travelers & business */
-const QUICK_PHRASES = [
-  { category: "Affaires", label: "Meilleur prix", text: "Quel est votre meilleur prix pour cette commande ?" },
-  { category: "Affaires", label: "Signature contrat", text: "Nous sommes prêts à signer le partenariat aujourd'hui." },
-  { category: "Dubaï / Taxi", label: "Aéroport Terminal 3", text: "Pouvez-vous m'emmener au terminal 3 de l'aéroport s'il vous plaît ?" },
-  { category: "Dubaï / Taxi", label: "Dubai Mall", text: "Déposez-moi devant l'entrée principale du Dubai Mall." },
-  { category: "Hôtel", label: "Chambre prête", text: "Bonjour, à quelle heure ma chambre sera-t-elle prête ?" },
-  { category: "Restaurant", label: "L'addition par carte", text: "L'addition s'il vous plaît, je règle par carte bancaire." }
-];
+/* ═══════════════════ UTILITY FUNCTIONS ═══════════════════ */
 
-/* Helper for Canvas Word Wrap */
-function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
-  const words = text.split(" ");
-  let line = "";
-  for (let n = 0; n < words.length; n++) {
-    const testLine = line + words[n] + " ";
-    const metrics = ctx.measureText(testLine);
-    if (metrics.width > maxWidth && n > 0) {
-      ctx.fillText(line, x, y);
-      line = words[n] + " ";
-      y += lineHeight;
-    } else {
-      line = testLine;
-    }
-  }
-  ctx.fillText(line, x, y);
+function cheapest(prices) {
+  const entries = Object.entries(prices);
+  return entries.reduce((a, b) => (b[1] < a[1] ? b : a));
 }
 
-export default function App() {
-  /* Navigation: 'studio' (live app) | 'landing' (presentation) | 'presentation' (big screen) */
-  const [currentView, setCurrentView] = useState("studio");
+function generatePrices(identifier) {
+  const str = String(identifier);
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+  }
+  hash = Math.abs(hash);
+  const basePrice = 8 + (hash % 42); 
+  const variation = (hash % 100) / 1000; 
+  return {
+    Carrefour: parseFloat((basePrice * (0.95 + variation)).toFixed(2)),
+    "Amazon.ae": parseFloat((basePrice * (1.02 + variation * 0.5)).toFixed(2)),
+    Lulu: parseFloat((basePrice * (1.08 - variation * 0.3)).toFixed(2)),
+  };
+}
 
-  /* Language Settings */
-  const [sourceLang, setSourceLang] = useState("fr");
-  const [targetLang, setTargetLang] = useState("ar");
+function generateTrend(identifier) {
+  const str = String(identifier);
+  let seed = 0;
+  for (let i = 0; i < str.length; i++) {
+    seed = ((seed << 3) + str.charCodeAt(i)) | 0;
+  }
+  seed = Math.abs(seed);
+  const trend = [];
+  for (let i = 0; i < 7; i++) {
+    seed = (seed * 16807 + 11) % 2147483647;
+    trend.push(20 + (seed % 60));
+  }
+  return trend;
+}
 
-  /* Recognition & Translation State */
-  const [isRecording, setIsRecording] = useState(false);
-  const [interimText, setInterimText] = useState("");
-  const [sourceTranscript, setSourceTranscript] = useState("Bonjour, bienvenue dans notre application de traduction vocale en direct. Parlez dans le microphone pour voir la transcription et la traduction simultanée.");
-  const [translatedText, setTranslatedText] = useState("مرحباً، أهلاً بكم في تطبيقنا للترجمة الصوتية المباشرة. تحدث عبر الميكروفون لرؤية النسخ النصي والترجمة الفورية.");
-  const [isTranslating, setIsTranslating] = useState(false);
-  const [autoSpeak, setAutoSpeak] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [showExtensionBanner, setShowExtensionBanner] = useState(true);
+const AMAZON_AFFILIATE_TAG = "1004833073009-21";
 
-  /* Viral Features State */
-  const [showViralCardModal, setShowViralCardModal] = useState(false);
-  const [showReferralModal, setShowReferralModal] = useState(false);
-  const [showPhrasesDrawer, setShowPhrasesDrawer] = useState(false);
-  const [wordsCount, setWordsCount] = useState(148);
-  const [referralCount, setReferralCount] = useState(2);
-  const [pwaPrompt, setPwaPrompt] = useState(null);
-  const [pwaInstalled, setPwaInstalled] = useState(false);
+function getRetailerUrl(retailer, productName) {
+  const query = encodeURIComponent(productName);
+  const r = String(retailer).toLowerCase();
+  if (r.includes("carrefour")) {
+    return `https://www.carrefouruae.com/mafuae/en/search?keyword=${query}`;
+  } else if (r.includes("amazon")) {
+    return `https://www.amazon.ae/s?k=${query}&tag=${AMAZON_AFFILIATE_TAG}`;
+  } else if (r.includes("lulu")) {
+    return `https://www.luluhypermarket.com/en-ae/search/?text=${query}`;
+  }
+  return `https://www.google.com/search?q=${encodeURIComponent(retailer + ' ' + productName)}`;
+}
 
-  /* 7-Day Free Trial & Subscription State */
-  const [isSubscribed, setIsSubscribed] = useState(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      return Boolean(params.get("success"));
-    }
-    return false;
-  });
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentTab, setPaymentTab] = useState("card"); // 'card' | 'bank'
-  const [transferSubmitted, setTransferSubmitted] = useState(false);
-  const [transferName, setTransferName] = useState("");
-  const [transferEmail, setTransferEmail] = useState("");
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
+/* ═══════════════════ HOOKS ═══════════════════ */
 
-  /* Conversation History */
-  const [history, setHistory] = useState([
+function usePWAInstall() {
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+
+  useEffect(() => {
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    setIsIOS(ios);
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    setIsInstalled(standalone);
+
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    window.addEventListener('appinstalled', () => setIsInstalled(true));
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const triggerInstall = async () => {
+    if (!deferredPrompt) return false;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    setDeferredPrompt(null);
+    if (outcome === 'accepted') setIsInstalled(true);
+    return outcome === 'accepted';
+  };
+
+  return { canInstall: !!deferredPrompt, isInstalled, isIOS, triggerInstall };
+}
+
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth <= breakpoint : false
+  );
+
+  useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${breakpoint}px)`);
+    const handler = (e) => setIsMobile(e.matches);
+    if (mql.matches !== isMobile) setIsMobile(mql.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, [breakpoint, isMobile]);
+
+  return isMobile;
+}
+
+function generateDynamicSearchResults(query) {
+  const clean = query.trim();
+  const title = clean.charAt(0).toUpperCase() + clean.slice(1);
+  return [
     {
-      id: 1,
-      timestamp: "Il y a 2 min",
-      fromLang: "fr",
-      toLang: "ar",
-      source: "Bonjour, est-ce que vous comprenez le français ?",
-      translated: "مرحباً، هل تفهم اللغة الفرنسية؟"
+      id: `dyn-1-${clean}`,
+      name: `${title} Premium Edition`,
+      brand: "Top Store",
+      image_url: "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=200&h=200&fit=crop",
+      quantity: "Standard Pack",
+      prices: generatePrices(`${clean}-1`),
+      trend: generateTrend(`${clean}-1`),
+      promo: "BESTSELLER",
+      fromApi: true
     },
     {
-      id: 2,
-      timestamp: "Il y a 1 min",
-      fromLang: "en",
-      toLang: "ar",
-      source: "The contract is signed, congratulations on our partnership!",
-      translated: "تم توقيع العقد، تهانينا على شراكتنا!"
+      id: `dyn-2-${clean}`,
+      name: `${title} Pro Max 2026`,
+      brand: "Official Direct",
+      image_url: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&h=200&fit=crop",
+      quantity: "Deluxe Pack",
+      prices: generatePrices(`${clean}-2`),
+      trend: generateTrend(`${clean}-2`),
+      promo: "-25% OFF",
+      fromApi: true
+    },
+    {
+      id: `dyn-3-${clean}`,
+      name: `${title} Special Edition`,
+      brand: "Original",
+      image_url: "https://images.unsplash.com/photo-1583394838336-acd977736f90?w=200&h=200&fit=crop",
+      quantity: "Pack x2",
+      prices: generatePrices(`${clean}-3`),
+      trend: generateTrend(`${clean}-3`),
+      promo: "FLASH DEAL",
+      fromApi: true
     }
-  ]);
-  const [copiedType, setCopiedType] = useState(null);
+  ];
+}
 
-  /* References for Speech */
-  const recognitionRef = useRef(null);
-  const speechSynthRef = useRef(null);
-  const isRecordingRef = useRef(isRecording);
-  const sourceLangRef = useRef(sourceLang);
-  const targetLangRef = useRef(targetLang);
-  const autoSpeakRef = useRef(autoSpeak);
-  const canvasRef = useRef(null);
+function useProductSearch(query, debounceMs = 400) {
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const abortRef = useRef(null);
 
   useEffect(() => {
-    isRecordingRef.current = isRecording;
-    sourceLangRef.current = sourceLang;
-    targetLangRef.current = targetLang;
-    autoSpeakRef.current = autoSpeak;
-  }, [isRecording, sourceLang, targetLang, autoSpeak]);
-
-  const activeSourceLang = useMemo(() => LANGUAGES.find((l) => l.code === sourceLang) || LANGUAGES[2], [sourceLang]);
-  const activeTargetLang = useMemo(() => LANGUAGES.find((l) => l.code === targetLang) || LANGUAGES[0], [targetLang]);
-
-  /* ─── Listen for PWA Install Prompt ─── */
-  useEffect(() => {
-    const handleBeforeInstall = (e) => {
-      e.preventDefault();
-      setPwaPrompt(e);
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    if (navigator.onLine !== isOnline) setIsOnline(navigator.onLine);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
-    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
-    return () => window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
-  }, []);
+  }, [isOnline]);
 
-  const handleInstallPWA = async () => {
-    if (!pwaPrompt) {
-      alert("Pour installer l'application sur votre écran d'accueil :\n- Sur iPhone/Safari : Appuyez sur Partager ➔ 'Sur l'écran d'accueil'\n- Sur Android/Chrome : Menu ➔ 'Installer l'application'");
-      return;
-    }
-    pwaPrompt.prompt();
-    const result = await pwaPrompt.userChoice;
-    if (result.outcome === "accepted") {
-      setPwaInstalled(true);
-      setPwaPrompt(null);
-    }
-  };
-
-  /* ─── Text-to-Speech (Pronunciation) ─── */
-  const speakText = useCallback((text, langCode) => {
-    if (!speechSynthRef.current) return;
-    try {
-      speechSynthRef.current.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      const targetLangObj = LANGUAGES.find((l) => l.code === langCode);
-      utterance.lang = targetLangObj ? targetLangObj.bcp47 : "en-US";
-      utterance.rate = 0.95;
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      speechSynthRef.current.speak(utterance);
-    } catch (e) {
-      console.warn("TTS error:", e);
-      setIsSpeaking(false);
-    }
-  }, []);
-
-  /* ─── Contextual Simulation Fallback ─── */
-  const fallbackSimulate = useCallback((text, from, to) => {
-    let mock = "";
-    if (to === "ar") {
-      mock = "نعم، لقد تم استلام رسالتك وترجمتها بنجاح إلى اللغة العربية: " + text;
-    } else if (to === "en") {
-      mock = "Your speech has been successfully transcribed and translated: " + text;
-    } else if (to === "fr") {
-      mock = "Message reçu et traduit avec succès en français : " + text;
-    } else {
-      mock = `[${to.toUpperCase()}] ${text}`;
-    }
-    setTranslatedText(mock);
-    setHistory((prev) => [
-      { id: Date.now(), timestamp: "À l'instant", fromLang: from, toLang: to, source: text, translated: mock },
-      ...prev.slice(0, 19)
-    ]);
-    setWordsCount((prev) => prev + text.split(" ").length);
-    if (autoSpeakRef.current) speakText(mock, to);
-  }, [speakText]);
-
-  /* ─── Instant Translation Engine ─── */
-  const handleTranslate = useCallback(async (textToTranslate, from, to) => {
-    if (!textToTranslate || !textToTranslate.trim()) return;
-    setIsTranslating(true);
-    const clean = textToTranslate.trim();
-
-    // 1. Check Offline Dictionary
-    const lower = clean.toLowerCase().replace(/[.,!?;:]/g, "");
-    if (OFFLINE_DICTIONARY[lower] && OFFLINE_DICTIONARY[lower][to]) {
-      const result = OFFLINE_DICTIONARY[lower][to];
-      setTranslatedText(result);
-      setIsTranslating(false);
-      setHistory((prev) => [
-        { id: Date.now(), timestamp: "À l'instant", fromLang: from, toLang: to, source: clean, translated: result },
-        ...prev.slice(0, 19)
-      ]);
-      setWordsCount((prev) => prev + clean.split(" ").length);
-      if (autoSpeakRef.current) speakText(result, to);
+  useEffect(() => {
+    if (!query || query.length < 2) {
+      if (results.length !== 0) setResults([]);
+      if (loading) setLoading(false);
       return;
     }
 
-    // 2. Fetch from MyMemory Free API
-    try {
-      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(clean)}&langpair=${from}|${to}`;
-      const response = await fetch(url);
-      const data = await response.json();
+    setLoading(true);
 
-      if (data && data.responseData && data.responseData.translatedText) {
-        const trans = data.responseData.translatedText;
-        setTranslatedText(trans);
-        setHistory((prev) => [
-          { id: Date.now(), timestamp: "À l'instant", fromLang: from, toLang: to, source: clean, translated: trans },
-          ...prev.slice(0, 19)
-        ]);
-        setWordsCount((prev) => prev + clean.split(" ").length);
-        if (autoSpeakRef.current) speakText(trans, to);
-      } else {
-        throw new Error("API empty");
-      }
-    } catch {
-      // 3. Fallback to Google Translator Web API
+    const timer = setTimeout(async () => {
+      if (abortRef.current) abortRef.current.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      const localMatches = LOCAL_PRODUCTS.filter((p) =>
+        p.name.toLowerCase().includes(query.toLowerCase()) ||
+        p.brand.toLowerCase().includes(query.toLowerCase()) ||
+        p.category.toLowerCase().includes(query.toLowerCase())
+      );
+
       try {
-        const gUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(clean)}`;
-        const gRes = await fetch(gUrl);
-        const gData = await gRes.json();
-        if (gData && gData[0] && gData[0][0] && gData[0][0][0]) {
-          const finalResult = gData[0].map((item) => item[0]).join("");
-          setTranslatedText(finalResult);
-          setHistory((prev) => [
-            { id: Date.now(), timestamp: "À l'instant", fromLang: from, toLang: to, source: clean, translated: finalResult },
-            ...prev.slice(0, 19)
-          ]);
-          setWordsCount((prev) => prev + clean.split(" ").length);
-          if (autoSpeakRef.current) speakText(finalResult, to);
-        } else {
-          fallbackSimulate(clean, from, to);
+        const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=12&fields=code,product_name,brands,image_small_url,quantity`;
+        const res = await fetch(url, {
+          signal: controller.signal,
+          headers: { "User-Agent": "EasyCompareMarket/1.0" },
+        });
+
+        if (!res.ok) throw new Error("API error");
+
+        const data = await res.json();
+        const apiProducts = (data.products || [])
+          .filter((p) => p.product_name)
+          .map((p) => ({
+            id: p.code || Math.random().toString(36).slice(2),
+            name: p.product_name,
+            brand: p.brands || "Unknown brand",
+            image_url: p.image_small_url || null,
+            quantity: p.quantity || "",
+            prices: generatePrices(p.code || p.product_name),
+            trend: generateTrend(p.code || p.product_name),
+            fromApi: true,
+          }));
+
+        let combined = [...localMatches, ...apiProducts];
+        if (combined.length < 3) {
+          combined = [...combined, ...generateDynamicSearchResults(query)];
         }
-      } catch {
-        fallbackSimulate(clean, from, to);
+
+        setResults(combined);
+        setLoading(false);
+        setIsOnline(true);
+      } catch (err) {
+        if (err.name === "AbortError") return;
+        setIsOnline(false);
+        let combined = [...localMatches];
+        if (combined.length < 3) {
+          combined = [...combined, ...generateDynamicSearchResults(query)];
+        }
+        setResults(combined);
+        setLoading(false);
       }
-    } finally {
-      setIsTranslating(false);
-    }
-  }, [speakText, fallbackSimulate]);
-
-  const handleTranslateRef = useRef(handleTranslate);
-  useEffect(() => {
-    handleTranslateRef.current = handleTranslate;
-  }, [handleTranslate]);
-
-  /* ─── Initialize Speech Synthesis ─── */
-  useEffect(() => {
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      speechSynthRef.current = window.speechSynthesis;
-    }
-  }, []);
-
-  /* ─── Speech Recognition Setup ─── */
-  useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = activeSourceLang.bcp47;
-
-      recognition.onstart = () => {
-        setIsRecording(true);
-      };
-
-      recognition.onresult = (event) => {
-        let currentInterim = "";
-        let finalChunk = "";
-
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalChunk += event.results[i][0].transcript + " ";
-          } else {
-            currentInterim += event.results[i][0].transcript;
-          }
-        }
-
-        setInterimText(currentInterim);
-
-        if (finalChunk.trim()) {
-          const newFullSource = finalChunk.trim();
-          setSourceTranscript(newFullSource);
-          setInterimText("");
-          handleTranslateRef.current(newFullSource, sourceLangRef.current, targetLangRef.current);
-        }
-      };
-
-      recognition.onerror = (e) => {
-        console.warn("Speech recognition error:", e.error);
-        if (e.error !== "no-speech") {
-          setIsRecording(false);
-        }
-      };
-
-      recognition.onend = () => {
-        if (isRecordingRef.current) {
-          try {
-            recognition.start();
-          } catch {
-            setIsRecording(false);
-          }
-        } else {
-          setIsRecording(false);
-        }
-      };
-
-      recognitionRef.current = recognition;
-    } catch (err) {
-      console.error("Speech recognition initialization failed:", err);
-    }
+    }, debounceMs);
 
     return () => {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.abort();
-        } catch {
-          // ignore
-        }
-      }
+      clearTimeout(timer);
+      if (abortRef.current) abortRef.current.abort();
     };
-  }, [activeSourceLang]);
+  }, [query, debounceMs]);
 
-  /* ─── Toggle Microphone ─── */
-  const toggleRecording = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert("La reconnaissance vocale via le navigateur n'est pas supportée sur ce navigateur. Vous pouvez utiliser les boutons d'essai direct ci-dessous !");
-      return;
-    }
+  return { results, loading, isOnline };
+}
 
-    if (isRecording) {
-      setIsRecording(false);
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch {
-          // ignore
-        }
-      }
-    } else {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.lang = activeSourceLang.bcp47;
-          recognitionRef.current.start();
-          setIsRecording(true);
-        } catch (e) {
-          console.error("Failed to start mic:", e);
-        }
-      }
-    }
-  };
+/* ═══════════════════ UI COMPONENTS ═══════════════════ */
 
-  /* ─── Swap Languages ─── */
-  const handleSwapLanguages = () => {
-    const tempSrc = sourceLang;
-    const tempTgt = targetLang;
-    const tempSrcTxt = sourceTranscript;
-    const tempTgtTxt = translatedText;
+function AppShell({ children, footer, isMobile }) {
+  if (isMobile) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          minHeight: "100dvh",
+          background: "#FAF9F6",
+          display: "flex",
+          flexDirection: "column",
+          fontFamily: "'Inter', system-ui, sans-serif",
+          color: INK,
+        }}
+      >
+        <div
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: `calc(14px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 10px calc(16px + env(safe-area-inset-left))`,
+          }}
+        >
+          {children}
+        </div>
+        {footer}
+      </div>
+    );
+  }
 
-    setSourceLang(tempTgt);
-    setTargetLang(tempSrc);
-    setSourceTranscript(tempTgtTxt);
-    setTranslatedText(tempSrcTxt);
-  };
+  return (
+    <div
+      style={{
+        width: 375,
+        height: 760,
+        maxHeight: "92vh",
+        background: "#FAF9F6",
+        borderRadius: 44,
+        border: "12px solid #1E1E1E",
+        boxShadow: "0 25px 60px rgba(0,0,0,0.22), 0 0 0 1px rgba(255,255,255,0.08)",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        fontFamily: "'Inter', system-ui, sans-serif",
+        color: INK,
+        position: "relative",
+      }}
+    >
+      <div style={{ flex: 1, overflowY: "auto", padding: "18px 16px 8px" }}>{children}</div>
+      {footer}
+    </div>
+  );
+}
 
-  /* ─── Apply Demo Preset ─── */
-  const applyPreset = (preset) => {
-    setSourceLang(preset.sourceLang);
-    setTargetLang(preset.targetLang);
-    setSourceTranscript(preset.sourceText);
-    handleTranslate(preset.sourceText, preset.sourceLang, preset.targetLang);
-  };
-
-  /* ─── Inject Quick Phrase ─── */
-  const handleSelectQuickPhrase = (phrase) => {
-    setSourceTranscript(phrase.text);
-    handleTranslate(phrase.text, sourceLang, targetLang);
-    setShowPhrasesDrawer(false);
-  };
-
-  /* ─── Copy to Clipboard ─── */
-  const handleCopy = (text, type) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text);
-    setCopiedType(type);
-    setTimeout(() => setCopiedType(null), 2000);
-  };
-
-  /* ─── Share via Native API or WhatsApp ─── */
-  const handleNativeShare = () => {
-    const shareText = `🎙️ Traduction en Direct avec VoxBridge :\n\n"${sourceTranscript}"\n➔ ${translatedText}\n\nEssayez gratuitement ici : https://easy-compare-market.vercel.app`;
+function TopBar({ title, onBack, shareable = false }) {
+  const handleShare = async () => {
     if (navigator.share) {
-      navigator.share({
-        title: "Traduction Vocale VoxBridge",
-        text: shareText,
-        url: "https://easy-compare-market.vercel.app"
-      }).catch(() => {});
-    } else {
-      const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
-      window.open(waUrl, "_blank");
-    }
-  };
-
-  /* ─── Download Viral Social Card as PNG ─── */
-  const handleDownloadSocialCard = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-
-    // Dimensions
-    canvas.width = 1080;
-    canvas.height = 1080;
-
-    // Background Gradient
-    const grad = ctx.createLinearGradient(0, 0, 1080, 1080);
-    grad.addColorStop(0, "#0B0E17");
-    grad.addColorStop(0.5, "#18182E");
-    grad.addColorStop(1, "#063D31");
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 1080, 1080);
-
-    // Decorative circle glow
-    ctx.beginPath();
-    ctx.arc(900, 200, 300, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(6, 182, 212, 0.12)";
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.arc(200, 900, 350, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(245, 158, 11, 0.10)";
-    ctx.fill();
-
-    // Brand Header
-    ctx.fillStyle = "#6366F1";
-    ctx.font = "bold 38px sans-serif";
-    ctx.fillText("VOXBRIDGE AI", 90, 120);
-
-    ctx.fillStyle = "#94A3B8";
-    ctx.font = "26px sans-serif";
-    ctx.fillText("Transcription & Traduction Vocale Instantanée", 90, 160);
-
-    // Flags Badge
-    ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
-    ctx.roundRect(90, 230, 420, 60, 20);
-    ctx.fill();
-    ctx.fillStyle = "#FFFFFF";
-    ctx.font = "bold 26px sans-serif";
-    ctx.fillText(`${activeSourceLang.flag} ${activeSourceLang.nameEn} ➔ ${activeTargetLang.flag} ${activeTargetLang.nameEn}`, 115, 270);
-
-    // Original Quote
-    ctx.fillStyle = "#CBD5E1";
-    ctx.font = "italic 36px sans-serif";
-    wrapCanvasText(ctx, `"${sourceTranscript}"`, 90, 390, 900, 50);
-
-    // Divider Line
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(90, 560);
-    ctx.lineTo(990, 560);
-    ctx.stroke();
-
-    // Translated Text (Golden Calligraphy)
-    ctx.fillStyle = "#F59E0B";
-    ctx.font = "bold 52px sans-serif";
-    wrapCanvasText(ctx, translatedText, 90, 660, 900, 70);
-
-    // Footer Watermark & Link
-    ctx.fillStyle = "#06B6D4";
-    ctx.font = "bold 28px sans-serif";
-    ctx.fillText("⚡ Traduit en 0.2s • Testez gratuitement sur easy-compare-market.vercel.app", 90, 990);
-
-    // Trigger download
-    const link = document.createElement("a");
-    link.download = "voxbridge_citation.png";
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-  }, [sourceTranscript, translatedText, activeSourceLang, activeTargetLang]);
-
-  /* ─── Stripe Checkout Trigger with 7-Day Trial ─── */
-  const handleStartStripeCheckout = async () => {
-    setCheckoutLoading(true);
-    try {
-      const res = await fetch("/api/create-checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currency: "aed", plan: "monthly" })
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert("Session Stripe prête : Votre période d'essai de 7 jours est validée !");
-        setIsSubscribed(true);
-        setShowPaymentModal(false);
+      try {
+        await navigator.share({
+          title: 'Easy Compare Market',
+          text: 'Check out this amazing app to compare prices and save money! 💸',
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.error("Share failed", err);
       }
-    } catch {
-      alert("Mode Démo Stripe : Essai de 7 jours activé avec succès !");
-      setIsSubscribed(true);
-      setShowPaymentModal(false);
-    } finally {
-      setCheckoutLoading(false);
+    } else {
+      alert("Sharing not supported on this browser. Copy the link instead!");
     }
-  };
-
-  /* ─── Bank Transfer Notification ─── */
-  const handleSendBankTransferProof = (e) => {
-    e.preventDefault();
-    if (!transferName || !transferEmail) return;
-    setTransferSubmitted(true);
-    setTimeout(() => {
-      alert(`Merci ${transferName} ! Votre demande de virement a été transmise à provalentin883@gmail.com. Vos 7 jours d'essai gratuit sont immédiatement débloqués.`);
-      setIsSubscribed(true);
-      setShowPaymentModal(false);
-      setTransferSubmitted(false);
-    }, 1200);
-  };
-
-  /* ─── Download Transcript File ─── */
-  const handleDownloadTranscript = () => {
-    const content = `=== TRANSCRIPTION & TRADUCTION VOXBRIDGE ===\nDate: ${new Date().toLocaleString()}\nLangue Source: ${activeSourceLang.label}\nLangue Cible: ${activeTargetLang.label}\n\n--- TEXTE ORIGINAL ---\n${sourceTranscript}\n\n--- TEXTE TRADUIT ---\n${translatedText}\n\n--- HISTORIQUE DES ÉCHANGES ---\n` +
-      history.map((h, i) => `[${i + 1}] (${h.fromLang} -> ${h.toLang}):\nOriginal: ${h.source}\nTraduction: ${h.translated}\n`).join("\n");
-
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `traduction_voxbridge_${Date.now()}.txt`;
-    link.click();
-    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="min-h-screen w-full relative flex flex-col text-slate-100 bg-[#07090E] selection:bg-indigo-500 selection:text-white">
-      {/* Background Decorative Mesh & Grid */}
-      <div className="bg-ambient-mesh" />
-      <div className="bg-grid-pattern" />
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="ecm-btn-bounce"
+          style={{ background: "none", border: "none", padding: 4, cursor: "pointer", color: INK }}
+        >
+          <ChevronLeft size={24} />
+        </button>
+      )}
+      {!onBack && (
+        <div
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 10,
+            background: BLUE,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            boxShadow: "0 2px 6px rgba(21,104,192,0.2)",
+          }}
+        >
+          <ShoppingBag size={20} color="#fff" strokeWidth={2.2} />
+        </div>
+      )}
+      <span style={{ fontWeight: 800, fontSize: 17, letterSpacing: -0.2, color: INK, flex: 1, marginLeft: 2 }}>
+        {title || "Easy Compare Market"}
+      </span>
+      
+      {shareable && (
+        <button
+          onClick={handleShare}
+          className="ecm-btn-bounce"
+          style={{
+            background: "#E8F2FC",
+            border: "1.5px solid #D0E4FA",
+            borderRadius: "50%",
+            width: 40,
+            height: 40,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: BLUE,
+            cursor: "pointer",
+            flexShrink: 0,
+          }}
+        >
+          <Share2 size={19} strokeWidth={2.2} />
+        </button>
+      )}
+    </div>
+  );
+}
 
-      {/* Hidden Canvas for High-Res Viral Image Generation */}
-      <canvas ref={canvasRef} className="hidden" />
+function Pill({ children, tone = "neutral" }) {
+  const tones = {
+    neutral: { bg: "#F0EFEA", fg: "#5F5E5A" },
+    accent: { bg: "#E6F1FB", fg: BLUE_DARK },
+    success: { bg: "#EAF3DE", fg: "#3B6D11" },
+    danger: { bg: "#FFF0F0", fg: "#E53935" },
+  };
+  const t = tones[tone];
+  return (
+    <span
+      style={{
+        background: t.bg,
+        color: t.fg,
+        fontSize: 11,
+        fontWeight: 700,
+        padding: "4px 10px",
+        borderRadius: 20,
+        display: "inline-block",
+      }}
+    >
+      {children}
+    </span>
+  );
+}
 
-      {/* ═══════════════════════════════════════════════════════════
-          TOP GLOBAL NAVIGATION BAR
-          ═══════════════════════════════════════════════════════════ */}
-      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#07090E]/85 backdrop-blur-xl px-4 sm:px-8 py-3 flex items-center justify-between">
-        {/* Brand Logo */}
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-500/25 ring-1 ring-white/20">
-            <Radio className="w-5 h-5 text-white animate-pulse" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-lg sm:text-xl tracking-tight text-white flex items-center gap-1.5">
-                VoxBridge
-                <span className="text-[10px] uppercase font-mono tracking-widest px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                  VIRAL AI
-                </span>
-              </span>
+function BottomNav({ screen, setScreen, isMobile }) {
+  const items = [
+    { id: "home", icon: Home, label: "Home" },
+    { id: "search", icon: Search, label: "Search" },
+    { id: "alerts", icon: Download, label: "Installer" },
+    { id: "profile", icon: User, label: "Profile" },
+  ];
+  return (
+    <div
+      style={{
+        display: "flex",
+        borderTop: "1px solid #ECEAE3",
+        padding: isMobile
+          ? `10px 6px calc(14px + env(safe-area-inset-bottom))`
+          : "10px 6px 14px",
+        background: "#fff",
+        position: "relative",
+      }}
+    >
+      {items.map((it) => {
+        const active = screen === it.id;
+        const Icon = it.icon;
+        return (
+          <button
+            key={it.id}
+            onClick={() => setScreen(it.id)}
+            className="ecm-btn-bounce"
+            style={{
+              flex: 1,
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 4,
+              color: active ? BLUE : "#9B9A93",
+              fontSize: 11,
+              fontWeight: 700,
+            }}
+          >
+            <Icon size={22} strokeWidth={active ? 2.4 : 1.8} />
+            {it.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ProductImage({ src, size = 40, style = {} }) {
+  const [failed, setFailed] = useState(false);
+
+  if (!src || failed) {
+    return (
+      <div
+        style={{
+          width: size,
+          height: size,
+          borderRadius: 12,
+          background: "#E6F1FB",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          ...style,
+        }}
+      >
+        <Package size={size * 0.5} color={BLUE} />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt=""
+      onError={() => setFailed(true)}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: 12,
+        objectFit: "cover",
+        flexShrink: 0,
+        background: "#F0EFEA",
+        ...style,
+      }}
+    />
+  );
+}
+
+/* ═══════════════════ SCREENS ═══════════════════ */
+
+/* ═══════════════════ INSTALL SCREEN ═══════════════════ */
+
+function InstallScreen() {
+  const { canInstall, isInstalled, isIOS, triggerInstall } = usePWAInstall();
+  const [copied, setCopied] = useState(false);
+  const [installing, setInstalling] = useState(false);
+  const APP_URL = "https://easy-compare-market.vercel.app";
+
+  const handleInstall = async () => {
+    setInstalling(true);
+    await triggerInstall();
+    setInstalling(false);
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(APP_URL).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    });
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Easy Compare Market 🛒',
+          text: '💸 J\'utilise cette app pour comparer les prix Carrefour, Amazon.ae et Lulu ! Installe-la gratuitement 👇',
+          url: APP_URL,
+        });
+      } catch (_) {}
+    } else {
+      handleCopy();
+    }
+  };
+
+  return (
+    <div className="ecm-fade-up" style={{ paddingBottom: 20 }}>
+      <TopBar title="Installer l'app" />
+
+      {/* Hero banner */}
+      <div
+        className="ecm-gradient-animated"
+        style={{
+          borderRadius: 24,
+          padding: "28px 24px",
+          marginBottom: 24,
+          color: "#fff",
+          textAlign: "center",
+          boxShadow: "0 12px 30px rgba(21,104,192,0.3)",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <div style={{ fontSize: 52, marginBottom: 12 }}>📲</div>
+        <p style={{ fontSize: 20, fontWeight: 800, margin: "0 0 8px", letterSpacing: -0.3 }}>
+          {isInstalled ? "App déjà installée ! 🎉" : "Installe l'app gratuitement"}
+        </p>
+        <p style={{ fontSize: 13, opacity: 0.85, margin: 0, fontWeight: 500, lineHeight: 1.5 }}>
+          {isInstalled
+            ? "Tu peux maintenant partager l'app avec tes amis !"
+            : "Compare les prix depuis ton écran d'accueil, sans navigateur."}
+        </p>
+      </div>
+
+      {/* Install section */}
+      {!isInstalled && (
+        <div style={{ marginBottom: 20 }}>
+          <p style={{ fontSize: 14, fontWeight: 800, color: "#5F5E5A", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 0.5 }}>
+            📥 Installation
+          </p>
+
+          {/* Android / Desktop */}
+          {canInstall && (
+            <button
+              onClick={handleInstall}
+              className="ecm-pulse ecm-btn-bounce"
+              style={{
+                width: "100%",
+                background: BLUE,
+                color: "#fff",
+                border: "none",
+                borderRadius: 18,
+                padding: "18px 20px",
+                fontSize: 16,
+                fontWeight: 800,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 10,
+                boxShadow: "0 10px 25px rgba(21,104,192,0.3)",
+                marginBottom: 12,
+              }}
+            >
+              <Download size={22} />
+              {installing ? "Installation..." : "Installer sur mon téléphone"}
+            </button>
+          )}
+
+          {/* iOS instructions */}
+          {isIOS && (
+            <div
+              style={{
+                background: "#F0F7FF",
+                border: "1.5px solid #BDD9F7",
+                borderRadius: 18,
+                padding: "18px 20px",
+                marginBottom: 12,
+              }}
+            >
+              <p style={{ fontWeight: 800, fontSize: 15, margin: "0 0 14px", color: BLUE_DARK, display: "flex", alignItems: "center", gap: 8 }}>
+                <span>🍎</span> Sur iPhone / iPad
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {[
+                  { step: "1", text: "Appuie sur le bouton Partager", icon: "⬆️" },
+                  { step: "2", text: "Sélectionne \"Sur l'écran d'accueil\"", icon: "➕" },
+                  { step: "3", text: "Appuie sur \"Ajouter\" — c'est installé !", icon: "✅" },
+                ].map(({ step, text, icon }) => (
+                  <div key={step} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: BLUE, color: "#fff", fontSize: 13, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{step}</div>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: INK }}>{icon} {text}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <p className="text-[11px] text-slate-400 hidden sm:block">
-              Transcription vocale & traduction simultanée multilingue
-            </p>
+          )}
+
+          {/* Fallback if no prompt and not iOS */}
+          {!canInstall && !isIOS && (
+            <div
+              style={{
+                background: "#F7F6F2",
+                border: "1.5px solid #ECEAE3",
+                borderRadius: 18,
+                padding: "18px 20px",
+                marginBottom: 12,
+              }}
+            >
+              <p style={{ fontWeight: 800, fontSize: 14, margin: "0 0 6px", color: INK }}>📱 Sur Android (Chrome)</p>
+              <p style={{ fontSize: 13, color: "#5F5E5A", margin: "0 0 12px", lineHeight: 1.5, fontWeight: 500 }}>
+                Ouvre ce lien dans Chrome, puis appuie sur <strong>"Ajouter à l'écran d'accueil"</strong> dans le menu ⋮
+              </p>
+              <a
+                href={APP_URL}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  color: BLUE,
+                  fontWeight: 700,
+                  fontSize: 14,
+                  textDecoration: "none",
+                }}
+              >
+                <ExternalLink size={16} /> Ouvrir dans Chrome
+              </a>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Share section */}
+      <p style={{ fontSize: 14, fontWeight: 800, color: "#5F5E5A", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 0.5 }}>
+        📤 Partager avec des amis
+      </p>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 20 }}>
+        {/* Share button */}
+        <button
+          onClick={handleShare}
+          className="ecm-btn-bounce"
+          style={{
+            width: "100%",
+            background: "linear-gradient(135deg, #25D366, #1DA851)",
+            color: "#fff",
+            border: "none",
+            borderRadius: 18,
+            padding: "18px 20px",
+            fontSize: 16,
+            fontWeight: 800,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            boxShadow: "0 8px 20px rgba(37,211,102,0.25)",
+          }}
+        >
+          <Share2 size={20} />
+          Partager avec mes amis
+        </button>
+
+        {/* Copy link */}
+        <button
+          onClick={handleCopy}
+          className="ecm-btn-bounce"
+          style={{
+            width: "100%",
+            background: copied ? "#EAF3DE" : "#F0EFEA",
+            color: copied ? "#3B6D11" : INK,
+            border: `1.5px solid ${copied ? "#B6DFA0" : "#ECEAE3"}`,
+            borderRadius: 18,
+            padding: "16px 20px",
+            fontSize: 14,
+            fontWeight: 700,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            transition: "all 0.25s",
+          }}
+        >
+          <Copy size={18} />
+          <span style={{ flex: 1, textAlign: "left", fontSize: 13, color: "#5F5E5A", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {APP_URL}
+          </span>
+          <span style={{ fontWeight: 800, color: copied ? "#3B6D11" : BLUE, flexShrink: 0 }}>
+            {copied ? "Copié ✓" : "Copier"}
+          </span>
+        </button>
+      </div>
+
+      {/* Stats viral */}
+      <div style={{ background: "#FFF8E7", borderRadius: 18, padding: "16px 20px", border: "1.5px solid #F5DFA0" }}>
+        <p style={{ fontWeight: 800, fontSize: 14, margin: "0 0 12px", color: "#854F0B", display: "flex", alignItems: "center", gap: 8 }}>
+          <Gift size={16} /> Programme de parrainage
+        </p>
+        <p style={{ fontSize: 13, color: "#5F5E5A", margin: 0, lineHeight: 1.6, fontWeight: 500 }}>
+          Chaque ami que tu invites te rapporte <strong style={{ color: "#D4A843" }}>50 AED</strong> de crédit. Partage maintenant et commence à gagner ! 🎁
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function SubscriptionScreen({ goBack, email }) {
+  const stripe = useStripe();
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    // Check if coming back from successful checkout
+    const query = new URLSearchParams(window.location.search);
+    if (query.get("success")) {
+      setSuccess(true);
+      // Clean up URL
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
+
+  const handleShareToUnlock = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Easy Compare Market 🛒',
+          text: 'Découvre cette app géniale pour comparer les prix. On gagne tous les deux 50 AED de crédit si tu t\'inscris ! 👇',
+          url: window.location.origin + "?ref=VIP",
+        });
+        alert("Merci d'avoir partagé ! Ton compte sera crédité si ton ami s'inscrit.");
+      } catch (err) {
+        console.error("Share failed", err);
+      }
+    } else {
+      alert("Partage ce lien: " + window.location.origin + "?ref=VIP");
+    }
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!stripe) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/create-checkout', { method: 'POST' });
+      const { id, message } = await res.json();
+      
+      if (id) {
+        const { error } = await stripe.redirectToCheckout({ sessionId: id });
+        if (error) {
+          console.error(error);
+          setLoading(false);
+        }
+      } else {
+        alert("Erreur: " + message);
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+      alert("Impossible de se connecter au serveur de paiement.");
+    }
+  };
+
+  if (success) {
+    return (
+      <div className="ecm-fade-up" style={{ textAlign: "center", padding: "40px 12px" }}>
+        <TopBar title="Abonnement Confirmé" onBack={goBack} />
+        <div className="ecm-scale-pop" style={{ marginTop: 40, marginBottom: 20 }}>
+          <Check size={64} color="#3B6D11" style={{ background: "#EAF3DE", borderRadius: "50%", padding: 12 }} />
+        </div>
+        <h2 style={{ margin: "0 0 8px", fontSize: 24, fontWeight: 800 }}>Paiement Réussi ! 🎉</h2>
+        <p style={{ color: "#5F5E5A", fontSize: 14, lineHeight: 1.5 }}>
+          Félicitations, tu es maintenant Premium ! Un reçu a été envoyé à <strong>{email}</strong>.
+        </p>
+        
+        <div style={{ background: "#FFF8E7", borderRadius: 16, padding: "20px", marginTop: 24, border: "1.5px solid #F5DFA0" }}>
+          <p style={{ fontWeight: 800, fontSize: 16, margin: "0 0 10px", color: "#854F0B" }}>🎁 Rends l'app Virale !</p>
+          <p style={{ fontSize: 13, color: "#5F5E5A", margin: "0 0 16px", lineHeight: 1.5 }}>
+            Partage ton lien exclusif. Pour chaque ami qui s'abonne, tu reçois 1 mois gratuit !
+          </p>
+          <button
+            onClick={handleShareToUnlock}
+            className="ecm-btn-bounce"
+            style={{
+              background: "#D4A843", color: "#fff", border: "none", borderRadius: 12, padding: "12px 20px", fontSize: 14, fontWeight: 800, cursor: "pointer", width: "100%"
+            }}
+          >
+            Inviter un ami
+          </button>
+        </div>
+
+        <button
+          onClick={goBack}
+          className="ecm-btn-bounce"
+          style={{
+            background: BLUE, color: "#fff", border: "none", borderRadius: 14, padding: "16px 24px", fontSize: 15, fontWeight: 800, cursor: "pointer", marginTop: 30, width: "100%", boxShadow: "0 10px 20px rgba(21, 104, 192, 0.2)"
+          }}
+        >
+          Retour à l'accueil
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="ecm-fade-up" style={{ paddingBottom: 24 }}>
+      <TopBar title="Abonnement Premium" onBack={goBack} />
+      
+      <div className="ecm-plan-card recommended ecm-pulse" style={{ marginBottom: 20, marginTop: 15 }}>
+        <h3 style={{ margin: "10px 0 5px", color: BLUE_DARK, fontSize: 18, fontWeight: 800 }}>Plan VIP Premium</h3>
+        <div style={{ fontSize: 32, fontWeight: 800, margin: "10px 0", color: INK }}>
+          14.99 <span style={{fontSize: 14, fontWeight: 600, color: "#5F5E5A"}}>AED / mois</span>
+        </div>
+        <ul style={{ listStyle: "none", padding: 0, margin: "20px 0 10px", textAlign: "left", fontSize: 13, display: "flex", flexDirection: "column", gap: 12 }}>
+          <li style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <div style={{ background: "#EAF3DE", padding: 4, borderRadius: "50%", color: "#3B6D11" }}><Check size={14} /></div>
+            Comparaison de prix en temps réel
+          </li>
+          <li style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <div style={{ background: "#EAF3DE", padding: 4, borderRadius: "50%", color: "#3B6D11" }}><Check size={14} /></div>
+            Accès à +10,000 produits exclusifs
+          </li>
+          <li style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <div style={{ background: "#EAF3DE", padding: 4, borderRadius: "50%", color: "#3B6D11" }}><Check size={14} /></div>
+            Alertes instantanées de baisse de prix
+          </li>
+        </ul>
+      </div>
+
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 15 }}>
+        <button
+          disabled={!stripe || loading}
+          type="submit"
+          className={loading ? "" : "ecm-pulse ecm-btn-bounce"}
+          style={{
+            background: BLUE,
+            color: "#fff",
+            border: "none",
+            borderRadius: 14,
+            padding: 18,
+            fontSize: 16,
+            fontWeight: 800,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            transition: "all 0.2s",
+            boxShadow: "0 10px 20px rgba(21, 104, 192, 0.3)"
+          }}
+        >
+          {loading ? "Redirection vers Stripe..." : "S'abonner via Stripe"}
+        </button>
+        <p style={{ fontSize: 12, color: "#9B9A93", textAlign: "center", margin: 0, fontWeight: 500 }}>
+          🔒 Paiement Sécurisé 256-bit par Stripe
+        </p>
+      </form>
+    </div>
+  );
+}
+
+function HomeScreen({ goSearch, goDetail, goSubscription, activeCategory, setActiveCategory }) {
+  const filteredProducts = LOCAL_PRODUCTS.filter(
+    (p) => activeCategory === "all" || p.category === activeCategory
+  );
+
+  return (
+    <div>
+      <TopBar shareable={true} />
+      
+      {/* Hero Banner */}
+      <div
+        style={{
+          borderRadius: 24,
+          background: "linear-gradient(180deg, #10599E 0%, #0B4682 100%)",
+          padding: "24px 20px 22px",
+          marginBottom: 18,
+          color: "#fff",
+          position: "relative",
+          overflow: "hidden",
+          boxShadow: "0 14px 28px -4px rgba(11, 70, 130, 0.35)",
+        }}
+      >
+        <div style={{ position: "relative", zIndex: 2 }}>
+          <p style={{ fontSize: 14, fontWeight: 700, margin: "0 0 8px", color: "rgba(255, 255, 255, 0.95)" }}>
+            Hello 👋
+          </p>
+          <h1 style={{ fontSize: 22, fontWeight: 800, margin: "0 0 16px", letterSpacing: -0.4, lineHeight: 1.25 }}>
+            Save money on your daily purchases.
+          </h1>
+          <div
+            className="ecm-bounce-in"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background: "linear-gradient(180deg, #E53935 0%, #D32F2F 100%)",
+              color: "#fff",
+              padding: "9px 16px",
+              borderRadius: 999,
+              fontSize: 12,
+              fontWeight: 800,
+              letterSpacing: 0.3,
+              boxShadow: "0 6px 16px rgba(229, 57, 53, 0.45)",
+            }}
+          >
+            <Clock size={16} strokeWidth={2.5} />
+            <span>FLASH SALE: UP TO -50% TODAY</span>
           </div>
-        </div>
-
-        {/* View Switcher Tabs */}
-        <div className="flex items-center p-1 rounded-xl bg-white/5 border border-white/10 text-xs">
-          <button
-            onClick={() => setCurrentView("studio")}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
-              currentView === "studio"
-                ? "bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-md shadow-indigo-500/30"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <Mic className="w-3.5 h-3.5" />
-            <span>Studio Direct</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentView("landing")}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
-              currentView === "landing"
-                ? "bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-md shadow-indigo-500/30"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <Globe className="w-3.5 h-3.5" />
-            <span>Présentation</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentView("presentation")}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
-              currentView === "presentation"
-                ? "bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-md shadow-indigo-500/30"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <Laptop className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Grand Écran</span>
-            <span className="sm:hidden">Écran</span>
-          </button>
-
-          {/* Referral Viral Button */}
-          <button
-            onClick={() => setShowReferralModal(true)}
-            className="px-2.5 py-1.5 rounded-lg font-bold text-amber-300 hover:text-amber-200 transition-all flex items-center gap-1 bg-amber-500/10 border border-amber-500/30"
-            title="Parrainez un ami et gagnez +7 jours gratuits"
-          >
-            <Gift className="w-3.5 h-3.5 text-amber-400 animate-bounce" />
-            <span className="hidden md:inline">+7j Offerts</span>
-          </button>
-        </div>
-
-        {/* Action Controls */}
-        <div className="flex items-center gap-2">
-          {/* PWA Install Button */}
-          {!pwaInstalled && (
-            <button
-              onClick={handleInstallPWA}
-              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-xs text-cyan-300 font-semibold transition-all"
-              title="Installer l'application sur smartphone ou PC"
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-              <span>Installer App</span>
-            </button>
-          )}
-
-          <button
-            onClick={() => setShowPaymentModal(true)}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/40 text-amber-300 text-xs font-semibold hover:brightness-110 transition-all"
-          >
-            <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-            <span>{isSubscribed ? "VIP PRO ILLIMITÉ" : "Essai 7 Jours"}</span>
-          </button>
-
-          <button
-            onClick={toggleRecording}
-            className={`btn-press px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-lg transition-all ${
-              isRecording
-                ? "bg-rose-600 text-white recording-pulse hover:bg-rose-500"
-                : "bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/20"
-            }`}
-          >
-            <Mic className="w-3.5 h-3.5" />
-            <span>{isRecording ? "Écoute..." : "Micro"}</span>
-          </button>
-        </div>
-      </header>
-
-      {/* ═══════════════════════════════════════════════════════════
-          VIRAL TICKER BAR & 7-DAY TRIAL STATUS
-          ═══════════════════════════════════════════════════════════ */}
-      <div className="relative z-40 bg-gradient-to-r from-amber-950/80 via-indigo-950/80 to-slate-900/90 border-b border-amber-500/30 px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-amber-200">
-          <span className="px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-300 font-mono text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
-            <Flame className="w-3 h-3 text-amber-400 fill-amber-400" />
-            {isSubscribed ? "VIP Pro Actif" : "Essai Gratuit : Jour 1 sur 7"}
-          </span>
-          <span className="hidden sm:inline">
-            ⚡ <strong>{wordsCount} mots traduits</strong> aujourd'hui • Latence instantanée 0.2s.
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowViralCardModal(true)}
-            className="text-cyan-300 hover:text-white font-bold flex items-center gap-1 transition-colors"
-          >
-            <Share2 className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Partager / Créer Carte Virale</span>
-          </button>
-          <span className="text-white/20">|</span>
-          <button
-            onClick={() => setShowPaymentModal(true)}
-            className="text-amber-300 hover:text-white font-bold underline flex items-center gap-1"
-          >
-            <CreditCard className="w-3 h-3" />
-            Abonnement & RIB
-          </button>
-          {showExtensionBanner && (
-            <button
-              onClick={() => setShowExtensionBanner(false)}
-              className="text-slate-400 hover:text-white px-1.5 py-0.5 rounded hover:bg-white/10"
-              title="Fermer"
-            >
-              ✕
-            </button>
-          )}
         </div>
       </div>
 
-      {/* ═══════════════════════════════════════════════════════════
-          MAIN CONTENT AREA BASED ON VIEW
-          ═══════════════════════════════════════════════════════════ */}
-      <main className="relative z-10 flex-1 flex flex-col w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* ───────────────────────────────────────────────────────────
-            VIEW 1: LIVE STUDIO TRANSLATOR
-            ─────────────────────────────────────────────────────────── */}
-        {currentView === "studio" && (
-          <div className="flex flex-col gap-6 w-full animate-fade-in">
-            {/* Control Bar: Language Selectors & Mode Actions */}
-            <div className="glass-panel rounded-3xl p-4 sm:p-5 flex flex-col md:flex-row items-center justify-between gap-4">
-              {/* Language Selection Row */}
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 w-full md:w-auto">
-                {/* Source Language */}
-                <div className="flex items-center gap-2 bg-slate-900/80 px-3 py-2 rounded-2xl border border-white/10">
-                  <span className="text-xl">{activeSourceLang.flag}</span>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-slate-400 font-medium">Je parle en :</span>
-                    <select
-                      value={sourceLang}
-                      onChange={(e) => {
-                        setSourceLang(e.target.value);
-                        handleTranslate(sourceTranscript, e.target.value, targetLang);
-                      }}
-                      className="bg-transparent text-white text-sm font-semibold outline-none cursor-pointer pr-1"
-                    >
-                      {LANGUAGES.map((l) => (
-                        <option key={l.code} value={l.code} className="bg-slate-900 text-white">
-                          {l.flag} {l.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+      {/* Search Input Button */}
+      <button
+        onClick={goSearch}
+        className="ecm-btn-bounce"
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          background: "#FAF9F6",
+          border: "1.5px solid #ECEAE3",
+          borderRadius: 22,
+          padding: "14px 18px",
+          marginBottom: 20,
+          cursor: "pointer",
+          textAlign: "left",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+        }}
+      >
+        <Search size={20} color="#94A3B8" strokeWidth={2.2} />
+        <span style={{ fontSize: 15, color: "#94A3B8", flex: 1, fontWeight: 500 }}>Search a product...</span>
+        <Scan size={20} color={BLUE} strokeWidth={2.4} />
+      </button>
+
+      {/* Categories Section */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <p style={{ fontSize: 18, fontWeight: 800, margin: 0, color: INK }}>Categories</p>
+        <span
+          onClick={() => setActiveCategory("all")}
+          style={{ fontSize: 13, color: BLUE, fontWeight: 700, cursor: "pointer" }}
+        >
+          See all
+        </span>
+      </div>
+      
+      <div className="ecm-h-scroll" style={{ display: "flex", gap: 12, overflowX: "auto", marginBottom: 24, paddingBottom: 6 }}>
+        {CATEGORIES.map((c) => {
+          const Icon = c.icon;
+          const isActive = activeCategory === c.id;
+          return (
+            <button
+              key={c.id}
+              onClick={() => setActiveCategory(c.id === activeCategory ? "all" : c.id)}
+              className="ecm-btn-bounce"
+              style={{
+                background: c.bg,
+                color: c.color,
+                border: isActive ? `2px solid ${c.color}` : "2px solid transparent",
+                borderRadius: 20,
+                width: 82,
+                height: 86,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                flexShrink: 0,
+                cursor: "pointer",
+                boxShadow: isActive ? `0 6px 14px ${c.color}30` : "none",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <Icon size={26} strokeWidth={2.2} />
+              <p style={{ fontSize: 13, fontWeight: 800, margin: 0 }}>{c.label}</p>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Top Deals Section */}
+      <p style={{ fontSize: 18, fontWeight: 800, margin: "0 0 14px", color: INK }}>Top Deals 🔥</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {filteredProducts.map((p, idx) => {
+          const [retailer, price] = cheapest(p.prices);
+          return (
+            <div
+              key={p.id}
+              className="ecm-card ecm-fade-up ecm-btn-bounce"
+              onClick={() => goDetail(p)}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                background: "#fff",
+                borderRadius: 20,
+                border: "1.5px solid #F0EFEA",
+                padding: "14px 16px",
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
+                animationDelay: `${idx * 0.05}s`,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: 16,
+                    background: "#E8F3FD",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Package size={30} color={BLUE} strokeWidth={2.2} />
                 </div>
-
-                {/* Swap Button */}
-                <button
-                  onClick={handleSwapLanguages}
-                  title="Inverser les langues"
-                  className="btn-press p-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-cyan-400 hover:text-white transition-all shadow-md"
-                >
-                  <ArrowRightLeft className="w-4 h-4" />
-                </button>
-
-                {/* Target Language */}
-                <div className="flex items-center gap-2 bg-slate-900/80 px-3 py-2 rounded-2xl border border-white/10 ring-1 ring-cyan-500/30">
-                  <span className="text-xl">{activeTargetLang.flag}</span>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-cyan-400 font-medium">Traduction instantanée :</span>
-                    <select
-                      value={targetLang}
-                      onChange={(e) => {
-                        setTargetLang(e.target.value);
-                        handleTranslate(sourceTranscript, sourceLang, e.target.value);
-                      }}
-                      className="bg-transparent text-white text-sm font-semibold outline-none cursor-pointer pr-1"
-                    >
-                      {LANGUAGES.map((l) => (
-                        <option key={l.code} value={l.code} className="bg-slate-900 text-white">
-                          {l.flag} {l.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Utility Toggles */}
-              <div className="flex flex-wrap items-center justify-center gap-2.5 w-full md:w-auto">
-                {/* Phrases Express / Souk Cheatsheet Button */}
-                <button
-                  onClick={() => setShowPhrasesDrawer(!showPhrasesDrawer)}
-                  className="btn-press px-3 py-2 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/15 text-cyan-300 flex items-center gap-1.5"
-                  title="Phrases prêtes pour Dubaï, Voyage & Affaires"
-                >
-                  <MessageSquare className="w-3.5 h-3.5" />
-                  <span>Phrases Dubaï/Voyage</span>
-                </button>
-
-                {/* Auto-Speak Toggle */}
-                <button
-                  onClick={() => setAutoSpeak(!autoSpeak)}
-                  className={`btn-press px-3 py-2 rounded-xl text-xs font-medium border flex items-center gap-1.5 transition-all ${
-                    autoSpeak
-                      ? "bg-purple-600/30 border-purple-500 text-purple-200"
-                      : "bg-white/5 border-white/10 text-slate-400 hover:text-white"
-                  }`}
-                  title="Prononcer vocalement chaque traduction automatiquement"
-                >
-                  {autoSpeak ? <Volume2 className="w-3.5 h-3.5 text-purple-300" /> : <VolumeX className="w-3.5 h-3.5" />}
-                  <span>Auto-Voix {autoSpeak ? "ON" : "OFF"}</span>
-                </button>
-
-                {/* Face to Face Mirror Inversion */}
-                <button
-                  onClick={() => setIsFlipped(!isFlipped)}
-                  className={`btn-press px-3 py-2 rounded-xl text-xs font-medium border flex items-center gap-1.5 transition-all ${
-                    isFlipped
-                      ? "bg-amber-500/20 border-amber-500 text-amber-200"
-                      : "bg-white/5 border-white/10 text-slate-400 hover:text-white"
-                  }`}
-                  title="Inverser le côté de l'interlocuteur pour poser l'appareil sur une table"
-                >
-                  <Smartphone className="w-3.5 h-3.5" />
-                  <span>Face-à-Face {isFlipped ? "Inversé" : "Normal"}</span>
-                </button>
-
-                {/* Share Quote Card */}
-                <button
-                  onClick={() => setShowViralCardModal(true)}
-                  className="btn-press p-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300"
-                  title="Créer une image à partager sur TikTok/Instagram/WhatsApp"
-                >
-                  <Share2 className="w-4 h-4" />
-                </button>
-
-                {/* Download transcript */}
-                <button
-                  onClick={handleDownloadTranscript}
-                  className="btn-press p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white"
-                  title="Télécharger la transcription (fichier texte)"
-                >
-                  <Download className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Quick Phrases Drawer (Expandable) */}
-            {showPhrasesDrawer && (
-              <div className="glass-panel rounded-3xl p-4 sm:p-5 border border-cyan-500/30 animate-fade-in">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2 text-xs font-bold text-cyan-300 uppercase tracking-wider">
-                    <Sparkles className="w-4 h-4" />
-                    <span>Phrases Utiles Prêtes (Dubaï, Affaires, Hôtels, Négociation)</span>
-                  </div>
-                  <button
-                    onClick={() => setShowPhrasesDrawer(false)}
-                    className="text-xs text-slate-400 hover:text-white"
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 800,
+                      margin: "0 0 2px",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      color: INK,
+                    }}
                   >
-                    Fermer ✕
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                  {QUICK_PHRASES.map((qp, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => handleSelectQuickPhrase(qp)}
-                      className="text-left p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 flex flex-col gap-1 transition-all"
-                    >
-                      <span className="text-[10px] font-mono text-cyan-400 font-bold uppercase">{qp.category} • {qp.label}</span>
-                      <span className="text-xs text-slate-200">"{qp.text}"</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ═══════════════════════════════════════════════════════════
-                DUAL TRANSLATION PANELS (SPEAKER & LISTENER)
-                ═══════════════════════════════════════════════════════════ */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-              {/* ─── LEFT: SPEAKER PANEL (ORIGINAL SPEECH) ─── */}
-              <div className="glass-panel rounded-3xl p-6 sm:p-7 flex flex-col justify-between border-t-2 border-t-indigo-500/80 shadow-2xl relative overflow-hidden">
-                <div>
-                  <div className="flex items-center justify-between pb-4 border-b border-white/10">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-2xl">{activeSourceLang.flag}</span>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h2 className="text-base font-bold text-white tracking-wide">
-                            {activeSourceLang.label}
-                          </h2>
-                          <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                            Orateur
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-400">Ce que vous prononcez au micro</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {isRecording && (
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs">
-                          <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-                          <span className="font-medium text-[11px]">Enregistrement</span>
-                        </div>
-                      )}
-                      <button
-                        onClick={() => handleCopy(sourceTranscript, "source")}
-                        className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                        title="Copier le texte"
-                      >
-                        {copiedType === "source" ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Transcript Content Area */}
-                  <div className="my-6 min-h-[180px] sm:min-h-[220px] flex flex-col justify-center">
-                    <div
-                      className={`text-lg sm:text-xl md:text-2xl font-medium leading-relaxed tracking-normal transition-all ${
-                        activeSourceLang.rtl ? "font-arabic text-right text-emerald-200" : "text-white"
-                      }`}
-                      dir={activeSourceLang.rtl ? "rtl" : "ltr"}
-                    >
-                      {sourceTranscript}
-                      {interimText && (
-                        <span className="text-cyan-400 font-normal italic opacity-90 ml-2">
-                          {interimText}
-                          <span className="live-cursor" />
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer Controls of Speaker Box */}
-                <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    {isRecording ? (
-                      <div className="flex items-center gap-1 h-10 px-3 rounded-2xl bg-slate-900/90 border border-rose-500/30">
-                        <span className="wave-bar" />
-                        <span className="wave-bar" />
-                        <span className="wave-bar" />
-                        <span className="wave-bar" />
-                        <span className="wave-bar" />
-                        <span className="wave-bar" />
-                        <span className="wave-bar" />
-                        <span className="wave-bar" />
-                        <span className="text-xs text-rose-300 font-mono ml-2">Capte la voix...</span>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-slate-400 flex items-center gap-1.5">
-                        <MicOff className="w-3.5 h-3.5 text-slate-500" />
-                        Microphone en veille
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => speakText(sourceTranscript, sourceLang)}
-                      className="p-3 rounded-2xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-all"
-                      title="Écouter la prononciation"
-                    >
-                      <Volume2 className="w-5 h-5" />
-                    </button>
-
-                    <button
-                      onClick={toggleRecording}
-                      className={`btn-press px-6 py-3 rounded-2xl font-semibold flex items-center gap-2.5 shadow-xl transition-all ${
-                        isRecording
-                          ? "bg-gradient-to-r from-rose-600 to-pink-600 text-white recording-pulse hover:brightness-110"
-                          : "bg-gradient-to-r from-indigo-600 to-cyan-600 text-white hover:from-indigo-500 hover:to-cyan-500 shadow-indigo-500/25"
-                      }`}
-                    >
-                      <Mic className={`w-5 h-5 ${isRecording ? "animate-bounce" : ""}`} />
-                      <span>{isRecording ? "Arrêter l'écoute" : "Parler maintenant"}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* ─── RIGHT: LISTENER PANEL (LIVE TRANSLATED ARABIC / TARGET) ─── */}
-              <div
-                className={`glass-panel rounded-3xl p-6 sm:p-7 flex flex-col justify-between border-t-2 border-t-cyan-400 shadow-2xl relative overflow-hidden transition-transform duration-500 ${
-                  isFlipped ? "face-to-face-inverted" : ""
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between pb-4 border-b border-white/10">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-2xl">{activeTargetLang.flag}</span>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h2 className="text-base font-bold text-white tracking-wide">
-                            {activeTargetLang.label}
-                          </h2>
-                          <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                            Interlocuteur
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-400">Traduction affichée instantanément</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {isTranslating && (
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 text-xs">
-                          <Sparkles className="w-3.5 h-3.5 animate-spin" />
-                          <span className="font-medium text-[11px]">Traduction...</span>
-                        </div>
-                      )}
-                      <button
-                        onClick={() => handleCopy(translatedText, "target")}
-                        className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
-                        title="Copier la traduction"
-                      >
-                        {copiedType === "target" ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Translated Content Area */}
-                  <div className="my-6 min-h-[180px] sm:min-h-[220px] flex flex-col justify-center">
-                    <div
-                      className={`text-xl sm:text-2xl md:text-3xl font-bold leading-relaxed tracking-normal transition-all ${
-                        activeTargetLang.rtl
-                          ? "font-arabic text-right text-amber-300 drop-shadow-[0_2px_12px_rgba(245,158,11,0.25)]"
-                          : "text-cyan-200"
-                      }`}
-                      dir={activeTargetLang.rtl ? "rtl" : "ltr"}
-                    >
-                      {translatedText}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer Controls of Listener Box */}
-                <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-2 text-xs text-slate-400">
-                    <ShieldCheck className="w-4 h-4 text-cyan-400" />
-                    <span>Prêt pour affichage direct ou vocalisation</span>
-                  </div>
-
-                  <div className="flex items-center gap-2.5">
-                    <button
-                      onClick={() => speakText(translatedText, targetLang)}
-                      className={`btn-press px-5 py-3 rounded-2xl font-semibold flex items-center gap-2 shadow-lg transition-all ${
-                        isSpeaking
-                          ? "bg-amber-500 text-slate-950 font-bold animate-pulse"
-                          : "bg-white/10 hover:bg-white/20 text-white border border-white/15"
-                      }`}
-                      title="Lire la traduction à haute voix"
-                    >
-                      <Volume2 className="w-4 h-4 text-cyan-300" />
-                      <span>{isSpeaking ? "Lecture en cours..." : "Écouter la voix"}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* ═══════════════════════════════════════════════════════════
-                FAST 1-CLICK DEMO TEST PRESETS
-                ═══════════════════════════════════════════════════════════ */}
-            <div className="glass-panel rounded-3xl p-5">
-              <div className="flex items-center justify-between mb-3.5">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  <Sparkles className="w-4 h-4 text-cyan-400" />
-                  <span>Essais rapides en 1 clic (Simuler sans microphone)</span>
-                </div>
-                <span className="text-[11px] text-slate-400">Cliquez pour tester immédiatement</span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {DEMO_PRESETS.map((p, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => applyPreset(p)}
-                    className="interactive-card p-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-left flex flex-col justify-between gap-2"
+                    {p.name.length > 18 ? p.name.slice(0, 16) + "..." : p.name}
+                  </p>
+                  <p style={{ fontSize: 12, color: "#9B9A93", margin: "0 0 6px", fontWeight: 600 }}>
+                    {p.brand}
+                  </p>
+                  <span
+                    style={{
+                      background: "#FEE2E2",
+                      color: "#DC2626",
+                      fontSize: 10,
+                      fontWeight: 800,
+                      padding: "2px 8px",
+                      borderRadius: 6,
+                      letterSpacing: 0.5,
+                      display: "inline-block",
+                    }}
                   >
-                    <span className="text-xs font-bold text-cyan-300">{p.title}</span>
-                    <p className="text-xs text-slate-300 line-clamp-2 italic font-light">
-                      "{p.sourceText}"
-                    </p>
-                    <span className="text-[10px] text-slate-400 flex items-center gap-1 font-mono">
-                      Tester ➔
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* ═══════════════════════════════════════════════════════════
-                CONVERSATION HISTORY LOG
-                ═══════════════════════════════════════════════════════════ */}
-            <div className="glass-panel rounded-3xl p-6">
-              <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-indigo-400" />
-                  <h3 className="font-semibold text-sm text-white">Historique de la conversation</h3>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-white/5 text-slate-400">
-                    {history.length} échanges
+                    FLASH
                   </span>
                 </div>
-
-                {history.length > 0 && (
-                  <button
-                    onClick={() => setHistory([])}
-                    className="text-xs text-slate-400 hover:text-rose-400 flex items-center gap-1 transition-colors"
-                  >
-                    <RotateCcw className="w-3 h-3" />
-                    Effacer l'historique
-                  </button>
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
+                {p.oldPrice && (
+                  <p style={{ margin: "0 0 2px", fontSize: 12, color: "#9B9A93", textDecoration: "line-through", fontWeight: 600 }}>
+                    {p.oldPrice.toFixed(2)} AED
+                  </p>
                 )}
-              </div>
-
-              <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
-                {history.map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-3.5 rounded-2xl bg-slate-900/60 border border-white/5 hover:border-white/10 transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs"
-                  >
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2 text-slate-400 text-[11px]">
-                        <span className="font-bold text-white uppercase">{item.fromLang}</span>
-                        <span>➔</span>
-                        <span className="font-bold text-cyan-300 uppercase">{item.toLang}</span>
-                        <span>•</span>
-                        <span>{item.timestamp}</span>
-                      </div>
-                      <p className="text-slate-200 text-sm font-medium">{item.source}</p>
-                      <p
-                        className={`text-amber-300 text-sm font-semibold ${
-                          item.toLang === "ar" ? "font-arabic text-base" : ""
-                        }`}
-                        dir={item.toLang === "ar" ? "rtl" : "ltr"}
-                      >
-                        {item.translated}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-1 self-end md:self-center">
-                      <button
-                        onClick={() => speakText(item.translated, item.toLang)}
-                        className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white"
-                        title="Vocaliser"
-                      >
-                        <Volume2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        onClick={() => handleCopy(item.translated, `item-${item.id}`)}
-                        className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white"
-                        title="Copier"
-                      >
-                        {copiedType === `item-${item.id}` ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ───────────────────────────────────────────────────────────
-            VIEW 2: PRESENTATION / BIG SCREEN MODE (SUBTITLES)
-            ─────────────────────────────────────────────────────────── */}
-        {currentView === "presentation" && (
-          <div className="flex flex-col gap-8 w-full py-8 animate-fade-in">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs uppercase font-mono tracking-widest text-cyan-400 font-semibold">
-                  Mode Conférence & Écran Géant
-                </span>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-                  Sous-titres & Traduction en Temps Réel
-                </h1>
-              </div>
-
-              <button
-                onClick={toggleRecording}
-                className={`btn-press px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-xl ${
-                  isRecording
-                    ? "bg-rose-600 text-white recording-pulse"
-                    : "bg-cyan-500 hover:bg-cyan-400 text-slate-950"
-                }`}
-              >
-                <Mic className="w-5 h-5" />
-                <span>{isRecording ? "Arrêter Micro" : "Démarrer Micro"}</span>
-              </button>
-            </div>
-
-            <div className="glass-panel rounded-3xl p-8 sm:p-14 min-h-[460px] flex flex-col justify-center items-center text-center border border-white/15 shadow-2xl relative">
-              <div
-                className={`text-3xl sm:text-5xl md:text-6xl font-black leading-tight max-w-5xl mb-8 ${
-                  activeTargetLang.rtl
-                    ? "font-arabic text-amber-300 drop-shadow-[0_4px_30px_rgba(245,158,11,0.35)]"
-                    : "text-cyan-300"
-                }`}
-                dir={activeTargetLang.rtl ? "rtl" : "ltr"}
-              >
-                {translatedText}
-              </div>
-
-              <div className="max-w-3xl text-lg sm:text-2xl font-medium text-slate-400 italic">
-                "{sourceTranscript}"
-                {interimText && <span className="text-cyan-400 ml-2">{interimText}</span>}
-              </div>
-
-              {isRecording && (
-                <div className="absolute bottom-8 flex items-center gap-1.5 px-4 py-2 rounded-full bg-slate-950/80 border border-white/15">
-                  <span className="wave-bar" />
-                  <span className="wave-bar" />
-                  <span className="wave-bar" />
-                  <span className="wave-bar" />
-                  <span className="wave-bar" />
-                  <span className="text-xs text-cyan-300 ml-2 font-mono">EN DIRECT ({activeSourceLang.nameEn} ➔ {activeTargetLang.nameEn})</span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ───────────────────────────────────────────────────────────
-            VIEW 3: PRODUCT LANDING PAGE SHOWCASE
-            ─────────────────────────────────────────────────────────── */}
-        {currentView === "landing" && (
-          <div className="flex flex-col gap-16 py-6 animate-fade-in">
-            {/* HERO SECTION */}
-            <div className="relative text-center max-w-4xl mx-auto flex flex-col items-center gap-6 pt-6 pb-8">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-semibold backdrop-blur-md">
-                <Sparkles className="w-4 h-4 text-cyan-400 animate-spin" />
-                <span>La passerelle universelle de traduction vocale instantanée</span>
-              </div>
-
-              <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight leading-[1.1] text-white">
-                Parlez en français.{" "}
-                <span className="gradient-text-arabic block font-arabic mt-1">
-                  يقرأ ويفهم بالعربية
-                </span>
-                <span className="gradient-text block">en temps réel absolu.</span>
-              </h1>
-
-              <p className="text-base sm:text-xl text-slate-300 max-w-2xl font-normal leading-relaxed">
-                Connectez deux personnes ne parlant pas la même langue. Posez votre téléphone ou ordinateur entre vous : chaque mot prononcé est transcrit et traduit à l'écran instantanément, avec lecture audio native.
-              </p>
-
-              <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-                <button
-                  onClick={() => setCurrentView("studio")}
-                  className="btn-press btn-shimmer px-8 py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-500 text-white font-bold text-base shadow-xl shadow-indigo-500/30 hover:brightness-110 flex items-center gap-2"
-                >
-                  <Mic className="w-5 h-5" />
-                  <span>Lancer l'Application Direct</span>
-                </button>
-
-                <button
-                  onClick={() => setShowPaymentModal(true)}
-                  className="btn-press px-6 py-4 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold text-base border border-amber-500/40 flex items-center gap-2"
-                >
-                  <Zap className="w-4 h-4" />
-                  <span>Essai Gratuit de 7 Jours</span>
-                </button>
-              </div>
-
-              {/* Trust Metric Badges */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 w-full pt-8 border-t border-white/10 mt-6">
-                <div className="flex flex-col items-center">
-                  <span className="text-2xl sm:text-3xl font-extrabold text-cyan-400 font-mono">0.18s</span>
-                  <span className="text-xs text-slate-400">Latence moyenne</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-2xl sm:text-3xl font-extrabold text-indigo-400 font-mono">100%</span>
-                  <span className="text-xs text-slate-400">Support RTL Arabe</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-2xl sm:text-3xl font-extrabold text-purple-400 font-mono">12+</span>
-                  <span className="text-xs text-slate-400">Langues mondiales</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-2xl sm:text-3xl font-extrabold text-amber-400 font-mono">7 Jours</span>
-                  <span className="text-xs text-slate-400">Essai Offert</span>
-                </div>
-              </div>
-            </div>
-
-            {/* FEATURE CARDS GRID */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="glass-panel rounded-3xl p-6 sm:p-8 flex flex-col gap-4 interactive-card">
-                <div className="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center border border-cyan-500/30">
-                  <Headphones className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold text-white">Reconnaissance Vocale Continue</h3>
-                <p className="text-sm text-slate-300 leading-relaxed">
-                  Pas besoin d'appuyer constamment sur le micro. Parlez naturellement, l'algorithme détecte les phrases, transcrit mot à mot et envoie la traduction au fil de l'eau.
+                <p style={{ fontSize: 22, fontWeight: 900, margin: 0, color: "#DC2626", letterSpacing: -0.5 }}>
+                  {price.toFixed(2)}
                 </p>
-              </div>
-
-              <div className="glass-panel rounded-3xl p-6 sm:p-8 flex flex-col gap-4 interactive-card">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center border border-indigo-500/30">
-                  <Smartphone className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold text-white">Mode Face-à-Face Inversé</h3>
-                <p className="text-sm text-slate-300 leading-relaxed">
-                  Posez votre appareil sur la table entre vous et votre interlocuteur étranger. Le texte traduit s'affiche inversé à 180° pour qu'il le lise instantanément de son côté.
-                </p>
-              </div>
-
-              <div className="glass-panel rounded-3xl p-6 sm:p-8 flex flex-col gap-4 interactive-card">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
-                  <Layers className="w-6 h-6" />
-                </div>
-                <h3 className="text-xl font-bold text-white">Extension Google Translate Compatible</h3>
-                <p className="text-sm text-slate-300 leading-relaxed">
-                  Conçu pour fonctionner de pair avec les extensions Chrome et outils Google Translator. Vos sous-titres et transcriptions sont exportables en un clic.
+                <p style={{ fontSize: 11, color: "#64748B", margin: "2px 0 0", fontWeight: 600 }}>
+                  at {retailer}
                 </p>
               </div>
             </div>
-
-            {/* CALL TO ACTION BOTTOM */}
-            <div className="rounded-3xl p-8 sm:p-12 bg-gradient-to-tr from-indigo-950 via-slate-900 to-cyan-950 border border-white/15 text-center flex flex-col items-center gap-4">
-              <h2 className="text-2xl sm:text-4xl font-extrabold text-white">
-                Prêt à transcrire et traduire en direct ?
-              </h2>
-              <p className="text-sm sm:text-base text-slate-300 max-w-xl">
-                Profitez de 7 jours gratuits pour tester sans aucun risque sur mobile, tablette ou ordinateur.
-              </p>
-              <button
-                onClick={() => setShowPaymentModal(true)}
-                className="btn-press btn-shimmer px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-extrabold text-sm shadow-xl shadow-amber-500/20 hover:brightness-110 flex items-center gap-2"
-              >
-                <Zap className="w-4 h-4 fill-slate-950" />
-                <span>Activer Mon Essai 7 Jours & Voir Coordonnées Bancaires</span>
-              </button>
-            </div>
-          </div>
+          );
+        })}
+        {filteredProducts.length === 0 && (
+          <p style={{ fontSize: 14, color: "#9B9A93", textAlign: "center", padding: "30px 0", fontWeight: 500 }}>
+            No promotions in this category at the moment.
+          </p>
         )}
-      </main>
-
-      {/* ═══════════════════════════════════════════════════════════
-          MODAL 1: VIRAL SOCIAL CARD GENERATOR
-          ═══════════════════════════════════════════════════════════ */}
-      {showViralCardModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-lg bg-[#0F1420] border border-white/20 rounded-3xl p-6 shadow-2xl flex flex-col gap-4">
-            <button
-              onClick={() => setShowViralCardModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-2 text-cyan-400 text-xs font-bold uppercase tracking-wider">
-              <Share2 className="w-4 h-4" />
-              <span>Générateur de Carte Virale Réseaux Sociaux</span>
-            </div>
-
-            {/* Visual Preview Card */}
-            <div className="viral-quote-card rounded-2xl p-5 border border-white/15 flex flex-col gap-3 text-left">
-              <div className="flex items-center justify-between text-xs text-slate-400">
-                <span className="font-bold text-white tracking-wider flex items-center gap-1.5">
-                  <Radio className="w-3.5 h-3.5 text-cyan-400" /> VOXBRIDGE AI
-                </span>
-                <span className="px-2 py-0.5 rounded-full bg-white/10 text-white font-mono text-[10px]">
-                  {activeSourceLang.flag} ➔ {activeTargetLang.flag}
-                </span>
-              </div>
-
-              <p className="text-sm text-slate-200 italic font-medium leading-relaxed">
-                "{sourceTranscript}"
-              </p>
-
-              <div className="h-[1px] bg-white/10 w-full" />
-
-              <p
-                className={`text-lg sm:text-xl font-bold text-amber-300 leading-relaxed ${
-                  activeTargetLang.rtl ? "font-arabic text-right text-xl" : ""
-                }`}
-                dir={activeTargetLang.rtl ? "rtl" : "ltr"}
-              >
-                {translatedText}
-              </p>
-
-              <div className="text-[10px] text-cyan-300/80 font-mono pt-1">
-                ⚡ Traduit en direct • easy-compare-market.vercel.app
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-2.5 pt-2">
-              <button
-                onClick={handleNativeShare}
-                className="btn-press py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>Partager (WhatsApp/X)</span>
-              </button>
-
-              <button
-                onClick={handleDownloadSocialCard}
-                className="btn-press py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg"
-              >
-                <Download className="w-4 h-4" />
-                <span>Télécharger Image PNG</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-          MODAL 2: VIRAL REFERRAL PROGRAM (+7 DAYS VIP)
-          ═══════════════════════════════════════════════════════════ */}
-      {showReferralModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-md bg-[#0F1420] border border-amber-500/30 rounded-3xl p-6 sm:p-7 shadow-2xl flex flex-col gap-4 text-center">
-            <button
-              onClick={() => setShowReferralModal(false)}
-              className="absolute top-4 right-4 p-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="w-14 h-14 rounded-3xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center mx-auto shadow-lg">
-              <Gift className="w-7 h-7 animate-bounce" />
-            </div>
-
-            <h3 className="text-2xl font-black text-white">
-              Gagnez +7 Jours VIP Gratuits !
-            </h3>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Pour chaque ami ou partenaire professionnel qui teste VoxBridge avec votre lien, vous recevez <strong>7 jours d'accès Pro offerts</strong>, et lui aussi !
-            </p>
-
-            {/* Referral Stats */}
-            <div className="p-3.5 rounded-2xl bg-slate-900 border border-white/10 flex items-center justify-around text-xs">
-              <div>
-                <span className="text-lg font-black text-amber-300 block">{referralCount}</span>
-                <span className="text-[11px] text-slate-400">Amis parrainés</span>
-              </div>
-              <div className="w-[1px] h-8 bg-white/10" />
-              <div>
-                <span className="text-lg font-black text-emerald-400 block">+14 Jours</span>
-                <span className="text-[11px] text-slate-400">Bonus débloqué</span>
-              </div>
-            </div>
-
-            {/* Link Box */}
-            <div className="p-2.5 rounded-xl bg-slate-950 border border-white/15 flex items-center justify-between text-xs font-mono">
-              <span className="text-cyan-300 truncate">https://easy-compare-market.vercel.app?ref=VALENTIN-PRO</span>
-              <button
-                onClick={() => handleCopy("https://easy-compare-market.vercel.app?ref=VALENTIN-PRO", "ref-link")}
-                className="px-2.5 py-1 rounded-lg bg-cyan-500 text-slate-950 font-bold shrink-0 ml-2"
-              >
-                {copiedType === "ref-link" ? "Copié !" : "Copier"}
-              </button>
-            </div>
-
-            {/* 1-Click WhatsApp Share */}
-            <button
-              onClick={() => {
-                const text = encodeURIComponent("Salut ! J'utilise cette application de traduction vocale simultanée en direct avec l'arabe. Teste gratuitement avec mon lien : https://easy-compare-market.vercel.app?ref=VALENTIN-PRO");
-                window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank");
-                setReferralCount((c) => c + 1);
-              }}
-              className="btn-press py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg"
-            >
-              <Send className="w-4 h-4" />
-              <span>Envoyer sur WhatsApp à un contact</span>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-          MODAL 3: 7-DAY TRIAL & BANKING DETAILS / SUBSCRIPTION
-          ═══════════════════════════════════════════════════════════ */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="relative w-full max-w-2xl bg-[#0F1420] border border-white/20 rounded-3xl p-6 sm:p-8 shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
-            <button
-              onClick={() => setShowPaymentModal(false)}
-              className="absolute top-5 right-5 p-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="mb-6">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold mb-2">
-                <Zap className="w-3.5 h-3.5 fill-amber-300" />
-                <span>Offre Spéciale : 7 Jours 100% Gratuits</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-black text-white">
-                Abonnement VoxBridge Pro
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-300 mt-1">
-                Testez gratuitement pendant 7 jours, puis <strong>29 AED / mois (~7,99 €)</strong> renouvelable chaque mois. Résiliation en 1 clic.
-              </p>
-            </div>
-
-            {/* Payment Mode Selector Tabs */}
-            <div className="grid grid-cols-2 gap-2 p-1 rounded-2xl bg-white/5 border border-white/10 mb-6 text-xs font-bold">
-              <button
-                onClick={() => setPaymentTab("card")}
-                className={`py-3 rounded-xl flex items-center justify-center gap-2 transition-all ${
-                  paymentTab === "card"
-                    ? "bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-lg"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                <CreditCard className="w-4 h-4" />
-                <span>Carte Bancaire (Stripe)</span>
-              </button>
-
-              <button
-                onClick={() => setPaymentTab("bank")}
-                className={`py-3 rounded-xl flex items-center justify-center gap-2 transition-all ${
-                  paymentTab === "bank"
-                    ? "bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black shadow-lg"
-                    : "text-slate-400 hover:text-white"
-                }`}
-              >
-                <Building className="w-4 h-4" />
-                <span>Coordonnées Bancaires (RIB/IBAN)</span>
-              </button>
-            </div>
-
-            <div className="overflow-y-auto flex-1 pr-1 space-y-5">
-              {paymentTab === "card" && (
-                <div className="space-y-4">
-                  <div className="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 flex items-start gap-3">
-                    <ShieldCheck className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
-                    <div className="text-xs text-slate-300 leading-relaxed">
-                      <strong className="text-white block mb-0.5">0 AED débité aujourd'hui :</strong>
-                      Vos coordonnées bancaires sont sécurisées par Stripe avec chiffrement SSL 256-bit. Votre prélèvement mensuel ne débutera qu'au 8ème jour.
-                    </div>
-                  </div>
-
-                  <div className="p-4 rounded-2xl bg-slate-900/80 border border-white/10 flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-bold text-slate-400 block">Plan Mensuel avec Essai</span>
-                      <span className="text-lg font-black text-white">VoxBridge Pro Illimité</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xs line-through text-slate-500 block">49 AED</span>
-                      <span className="text-xl font-extrabold text-cyan-400">29 AED <span className="text-xs text-slate-400 font-normal">/mois</span></span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleStartStripeCheckout}
-                    disabled={checkoutLoading}
-                    className="w-full btn-press py-4 rounded-2xl bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-500 text-white font-bold text-sm shadow-xl shadow-indigo-500/30 hover:brightness-110 flex items-center justify-center gap-2"
-                  >
-                    <Lock className="w-4 h-4" />
-                    <span>
-                      {checkoutLoading ? "Connexion sécurisée à Stripe..." : "Démarrer mes 7 jours gratuits avec Stripe"}
-                    </span>
-                  </button>
-
-                  <div className="flex items-center justify-center gap-4 text-[11px] text-slate-400 pt-2">
-                    <span className="flex items-center gap-1">
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> Sans engagement
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> Annulable à tout moment
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {paymentTab === "bank" && (
-                <div className="space-y-4">
-                  <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-500/30 flex items-start gap-3">
-                    <Building className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                    <div className="text-xs text-slate-300 leading-relaxed">
-                      <strong className="text-white block mb-0.5">Virement Bancaire Mensuel Récurrent :</strong>
-                      Pour les entreprises, indépendants ou clients préférant payer par virement direct chaque mois. Effectuez le virement vers les coordonnées ci-dessous :
-                    </div>
-                  </div>
-
-                  {/* Banking Info Box */}
-                  <div className="p-5 rounded-2xl bg-slate-900/90 border border-white/15 space-y-3 font-mono text-xs">
-                    <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                      <span className="text-slate-400">Bénéficiaire :</span>
-                      <span className="text-white font-bold">VALENTIN PRO / VOXBRIDGE</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                      <span className="text-slate-400">IBAN (Compte Professionnel) :</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-amber-300 font-bold tracking-wider">AE07 0331 2345 6789 0123 456</span>
-                        <button
-                          onClick={() => handleCopy("AE07 0331 2345 6789 0123 456", "iban")}
-                          className="p-1 rounded bg-white/10 hover:bg-white/20 text-slate-300"
-                          title="Copier l'IBAN"
-                        >
-                          {copiedType === "iban" ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                      <span className="text-slate-400">BIC / SWIFT :</span>
-                      <span className="text-white font-bold">STRPFRPPXXX</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                      <span className="text-slate-400">Montant Mensuel :</span>
-                      <span className="text-emerald-400 font-bold">29 AED (~7,99 €) / mois</span>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-400">Email de réception & facturation :</span>
-                      <span className="text-cyan-400 font-bold">provalentin883@gmail.com</span>
-                    </div>
-                  </div>
-
-                  {/* Form to notify Valentin of bank transfer */}
-                  <form onSubmit={handleSendBankTransferProof} className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
-                    <span className="text-xs font-bold text-white block">
-                      Valider mon essai de 7 jours après virement bancaire :
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        placeholder="Votre Nom ou Entreprise"
-                        required
-                        value={transferName}
-                        onChange={(e) => setTransferName(e.target.value)}
-                        className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-white text-xs outline-none focus:border-amber-400"
-                      />
-                      <input
-                        type="email"
-                        placeholder="Votre Email"
-                        required
-                        value={transferEmail}
-                        onChange={(e) => setTransferEmail(e.target.value)}
-                        className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-white/15 text-white text-xs outline-none focus:border-amber-400"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      className="w-full btn-press py-3 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-bold text-xs shadow-lg flex items-center justify-center gap-2 hover:brightness-110"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>{transferSubmitted ? "Envoi en cours..." : "Confirmer le virement & Activer mon essai 7 jours"}</span>
-                    </button>
-                  </form>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════
-          FOOTER
-          ═══════════════════════════════════════════════════════════ */}
-      <footer className="w-full border-t border-white/10 bg-[#07090E]/90 px-6 py-6 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-slate-400 font-medium">VoxBridge Viral Audio & Translation Engine v2.5</span>
-        </div>
-        <p>Développé avec reconnaissance vocale Web Speech & typographie arabe haute-fidélité.</p>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setCurrentView("studio")} className="hover:text-white transition-colors">
-            Studio
-          </button>
-          <span>•</span>
-          <button onClick={() => setCurrentView("landing")} className="hover:text-white transition-colors">
-            Présentation
-          </button>
-          <span>•</span>
-          <button onClick={() => setShowReferralModal(true)} className="text-cyan-400 hover:text-white transition-colors">
-            Parrainage (+7j)
-          </button>
-          <span>•</span>
-          <button onClick={() => setShowPaymentModal(true)} className="text-amber-400 hover:text-white transition-colors">
-            Abonnement & RIB
-          </button>
-        </div>
-      </footer>
+      </div>
     </div>
+  );
+}
+
+function SearchScreen({ goBack, goDetail }) {
+  const [query, setQuery] = useState("");
+  const { results, loading, isOnline } = useProductSearch(query);
+
+  const displayProducts = query.length < 2 ? LOCAL_PRODUCTS : results;
+
+  return (
+    <div>
+      <TopBar title="Search" onBack={goBack} />
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          marginBottom: 12,
+          padding: "8px 12px",
+          borderRadius: 10,
+          background: isOnline ? "#EAF3DE" : "#FAECE7",
+          fontSize: 12,
+          fontWeight: 700,
+          color: isOnline ? "#3B6D11" : "#D85A30",
+        }}
+      >
+        {isOnline ? <Wifi size={16} /> : <WifiOff size={16} />}
+        {isOnline ? "Online: 10M+ products available" : "Offline: Local products only"}
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          background: PAPER,
+          border: `2px solid ${query.length > 0 ? BLUE : "#ECEAE3"}`,
+          borderRadius: 16,
+          padding: "14px 16px",
+          marginBottom: 16,
+          transition: "border-color 0.2s, box-shadow 0.2s",
+          boxShadow: query.length > 0 ? "0 4px 15px rgba(21, 104, 192, 0.1)" : "none"
+        }}
+      >
+        <Search size={20} color="#9B9A93" />
+        <input
+          autoFocus
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Ex: water, rice, milk..."
+          style={{
+            border: "none",
+            outline: "none",
+            background: "transparent",
+            fontSize: 15,
+            fontWeight: 600,
+            flex: 1,
+            fontFamily: "inherit",
+            color: INK,
+          }}
+        />
+        {loading ? (
+          <div className="ecm-spinner" style={{ width: 20, height: 20, borderWidth: 3 }} />
+        ) : (
+          <ScanLine size={20} color={BLUE} />
+        )}
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {loading && (
+           <>
+             <div className="ecm-skeleton" style={{ height: 80, width: "100%", marginBottom: 6 }}></div>
+             <div className="ecm-skeleton" style={{ height: 80, width: "100%", marginBottom: 6 }}></div>
+             <div className="ecm-skeleton" style={{ height: 80, width: "100%" }}></div>
+           </>
+        )}
+        {!loading && displayProducts.map((p, idx) => {
+          const [retailer, price] = cheapest(p.prices);
+          return (
+            <button
+              key={p.id || idx}
+              className="ecm-card ecm-fade-up ecm-btn-bounce"
+              onClick={() => goDetail(p)}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "14px",
+                cursor: "pointer",
+                textAlign: "left",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 14, flex: 1, minWidth: 0 }}>
+                <ProductImage src={p.image_url} size={48} style={{ border: "1px solid #ECEAE3" }} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 700,
+                      margin: 0,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {p.name}
+                  </p>
+                  <p style={{ fontSize: 12, color: "#9B9A93", margin: "4px 0 0", fontWeight: 500 }}>
+                    {p.brand}
+                    {p.quantity ? ` · ${p.quantity}` : ""}
+                  </p>
+                </div>
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 10 }}>
+                <p style={{ fontSize: 16, fontWeight: 800, margin: 0, color: BLUE_DARK }}>
+                  {price.toFixed(2)}
+                </p>
+                <p style={{ fontSize: 10, color: "#5F5E5A", margin: "4px 0 0", fontWeight: 600 }}>at {retailer}</p>
+              </div>
+            </button>
+          );
+        })}
+
+        {!loading && query.length >= 2 && displayProducts.length === 0 && (
+          <div className="ecm-fade-up" style={{ textAlign: "center", padding: "50px 16px" }}>
+            <Search size={36} color="#C9C7BC" style={{ marginBottom: 16 }} />
+            <p style={{ fontSize: 16, fontWeight: 800, margin: "0 0 8px" }}>No products found</p>
+            <p style={{ fontSize: 13, color: "#9B9A93", margin: 0, fontWeight: 500 }}>
+              We couldn't find this item, try a different keyword!
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DetailScreen({ product, goBack }) {
+  const [alertOn, setAlertOn] = useState(false);
+  const sorted = Object.entries(product.prices).sort((a, b) => a[1] - b[1]);
+  const [selectedRetailer, setSelectedRetailer] = useState(sorted[0][0]);
+  const trend = product.trend || generateTrend(product.id);
+  const max = Math.max(...trend);
+
+  const discount = Math.round(((sorted[sorted.length - 1][1] - sorted[0][1]) / sorted[sorted.length - 1][1]) * 100);
+
+  // Gamification FOMO
+  const viewers = useMemo(() => Math.floor(Math.random() * 20) + 3, []);
+
+  const handleBuyNow = (retailerName = selectedRetailer) => {
+    const url = getRetailerUrl(retailerName, product.name);
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  return (
+    <div className="ecm-fade-up">
+      <TopBar title={product.name} onBack={goBack} shareable={true} />
+      
+      <div
+        style={{
+          background: "linear-gradient(135deg, #F7F6F2, #E6F1FB)",
+          borderRadius: 22,
+          padding: 28,
+          marginBottom: 20,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+          boxShadow: "inset 0 2px 10px rgba(0,0,0,0.02)"
+        }}
+      >
+        <div style={{ position: "absolute", top: 14, left: 14, background: "#FFF0F0", color: "#E53935", padding: "6px 12px", borderRadius: 20, fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}>
+          <Flame size={14} /> {viewers} people are viewing
+        </div>
+        {product.image_url ? (
+          <ProductImage src={product.image_url} size={160} style={{ borderRadius: 20, boxShadow: "0 15px 35px rgba(0,0,0,0.12)" }} />
+        ) : (
+          <Droplet size={80} color={BLUE} />
+        )}
+      </div>
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8 }}>
+        <div>
+          {product.brand && (
+            <p style={{ fontSize: 13, color: "#9B9A93", margin: "0 0 6px", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>
+              {product.brand} {product.quantity ? ` · ${product.quantity}` : ""}
+            </p>
+          )}
+          <p style={{ fontSize: 22, fontWeight: 800, margin: 0, lineHeight: 1.2 }}>{product.name}</p>
+        </div>
+        {product.promo ? (
+          <Pill tone="danger">{product.promo}</Pill>
+        ) : (
+          <Pill tone="success">-{discount}%</Pill>
+        )}
+      </div>
+
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 28 }}>
+        <p style={{ fontSize: 36, fontWeight: 800, margin: 0, letterSpacing: -1, color: product.promo ? "#E53935" : INK }}>
+          {sorted[0][1].toFixed(2)} <span style={{ fontSize: 16 }}>AED</span>
+        </p>
+        {product.oldPrice && <p className="ecm-old-price" style={{ fontSize: 18 }}>{product.oldPrice.toFixed(2)}</p>}
+      </div>
+
+      <p style={{ fontSize: 16, fontWeight: 800, margin: "0 0 14px" }}>Price Trend (7 days)</p>
+      <div style={{ height: 80, display: "flex", alignItems: "flex-end", gap: 8, marginBottom: 28, padding: "12px", background: "#fff", borderRadius: 14, border: "1px solid #ECEAE3" }}>
+        {trend.map((v, i) => (
+          <div
+            key={i}
+            style={{
+              flex: 1,
+              height: `${(v / max) * 100}%`,
+              background: i === trend.length - 1 ? BLUE : "#E6F1FB",
+              borderRadius: 6,
+              transition: "height 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+              position: "relative"
+            }}
+          />
+        ))}
+      </div>
+
+      <p style={{ fontSize: 16, fontWeight: 800, margin: "0 0 14px" }}>Where to buy?</p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 32 }}>
+        {sorted.map(([retailer, price], i) => {
+          const isSelected = selectedRetailer === retailer;
+          return (
+            <div
+              key={retailer}
+              className="ecm-card ecm-btn-bounce"
+              onClick={() => {
+                setSelectedRetailer(retailer);
+                handleBuyNow(retailer);
+              }}
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                border: isSelected ? `2px solid ${BLUE}` : "1px solid #ECEAE3",
+                padding: "16px 20px",
+                background: isSelected ? "#F9FCFF" : "#fff",
+                cursor: "pointer"
+              }}
+            >
+              <div>
+                {i === 0 && <span style={{ fontSize: 11, color: BLUE, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 }}>Best Deal · </span>}
+                <p style={{ fontSize: 16, fontWeight: 800, margin: i === 0 ? "2px 0 0" : 0, color: INK }}>{retailer}</p>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <p style={{ fontSize: 18, fontWeight: 800, margin: 0, color: INK }}>{price.toFixed(2)} AED</p>
+                <span style={{ fontSize: 11, color: BLUE, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 3, marginTop: 2 }}>
+                  Acheter <ExternalLink size={12} />
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ display: "flex", gap: 12 }}>
+        <button
+          onClick={() => setAlertOn((v) => !v)}
+          className="ecm-btn-bounce"
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            padding: 18,
+            fontSize: 14,
+            fontWeight: 800,
+            borderRadius: 16,
+            border: `2px solid ${alertOn ? BLUE : "#ECEAE3"}`,
+            background: alertOn ? "#E6F1FB" : "#fff",
+            color: alertOn ? BLUE : INK,
+            cursor: "pointer",
+          }}
+        >
+          <Bell size={20} className={alertOn ? "ecm-wobble" : ""} />
+          {alertOn ? "Alert On" : "Price Alert"}
+        </button>
+        <button
+          onClick={() => handleBuyNow(selectedRetailer)}
+          className="ecm-pulse ecm-btn-bounce"
+          style={{
+            flex: 1.5,
+            background: BLUE,
+            color: "#fff",
+            border: "none",
+            borderRadius: 16,
+            padding: 18,
+            fontSize: 16,
+            fontWeight: 800,
+            cursor: "pointer",
+            boxShadow: "0 8px 20px rgba(21,104,192,0.3)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          Buy Now
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ProfileScreen({ goSubscription }) {
+  const [lang, setLang] = useState("English");
+  const rows = [
+    {
+      icon: ArrowLeftRight,
+      label: "Language",
+      value: lang,
+      onClick: () =>
+        setLang(lang === "English" ? "العربية" : "English"),
+    },
+    { icon: Gift, label: "Invite Friends", value: "Earn 50 AED", onClick: () => {
+      if(navigator.share) navigator.share({title: 'Join me on Easy Compare!', url: window.location.href})
+    }},
+    { icon: Wallet, label: "Botim Connected", value: "Yes" },
+    { icon: Bell, label: "Active Alerts", value: "3" },
+  ];
+  return (
+    <div className="ecm-fade-up">
+      <TopBar title="My Profile" shareable={true} />
+      <div style={{ display: "flex", alignItems: "center", gap: 18, marginBottom: 28, padding: 14 }}>
+        <div
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: "50%",
+            background: "linear-gradient(135deg, #1568C0, #0C447C)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: 800,
+            color: "#fff",
+            fontSize: 22,
+            boxShadow: "0 8px 15px rgba(21,104,192,0.2)"
+          }}
+        >
+          VA
+        </div>
+        <div>
+          <p style={{ fontWeight: 800, fontSize: 20, margin: 0 }}>Valentin A.</p>
+          <p style={{ fontSize: 14, color: "#9B9A93", margin: "6px 0 0", fontWeight: 600 }}>Member since 2026</p>
+        </div>
+      </div>
+
+      <div
+        onClick={goSubscription}
+        className="ecm-card ecm-pulse ecm-btn-bounce"
+        style={{
+          background: "linear-gradient(135deg, #181818, #2D2D2D)",
+          color: "#fff",
+          border: "none",
+          padding: 24,
+          marginBottom: 28,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          cursor: "pointer",
+          boxShadow: "0 10px 25px rgba(0,0,0,0.15)"
+        }}
+      >
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <Sparkles size={18} color="#D4A843" />
+            <p style={{ fontSize: 16, fontWeight: 800, color: "#D4A843", margin: 0 }}>Upgrade to VIP</p>
+          </div>
+          <p style={{ fontSize: 13, color: "#A0A0A0", margin: 0, fontWeight: 500 }}>Unlimited Access + Real-time Alerts</p>
+        </div>
+        <ChevronRight size={24} color="#D4A843" />
+      </div>
+
+      <div style={{ background: "#fff", borderRadius: 18, border: "1px solid #ECEAE3", overflow: "hidden" }}>
+        {rows.map((r, i) => {
+          const Icon = r.icon;
+          const isLast = i === rows.length - 1;
+          const isHighlight = r.icon === Gift;
+          return (
+            <button
+              key={i}
+              onClick={r.onClick}
+              className="ecm-btn-bounce"
+              style={{
+                width: "100%",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "20px",
+                background: isHighlight ? "#FFF8E7" : "none",
+                border: "none",
+                borderBottom: isLast ? "none" : "1px solid #ECEAE3",
+                cursor: r.onClick ? "pointer" : "default",
+                textAlign: "left",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <div style={{ background: isHighlight ? "#D4A843" : "#F0EFEA", padding: 10, borderRadius: 12, color: isHighlight ? "#fff" : "#5F5E5A" }}>
+                  <Icon size={20} />
+                </div>
+                <span style={{ fontSize: 15, fontWeight: 700, color: isHighlight ? "#854F0B" : INK }}>{r.label}</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 800, color: isHighlight ? "#D4A843" : "#9B9A93" }}>{r.value}</span>
+                <ChevronRight size={18} color={isHighlight ? "#D4A843" : "#D1D0CA"} />
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════ ROOT ═══════════════════ */
+
+export default function EasyCompareMarketPrototype() {
+  const isMobile = useIsMobile();
+  const [screen, setScreen] = useState("home");
+  const [detailProduct, setDetailProduct] = useState(null);
+  const [activeCategory, setActiveCategory] = useState('all');
+
+  const goSearch = () => setScreen("search");
+  const goDetail = (p) => {
+    setDetailProduct(p);
+    setScreen("detail");
+  };
+  const goSubscription = () => setScreen("subscription");
+  const goBackToHome = () => setScreen("home");
+
+  let content;
+  if (screen === "home") content = <HomeScreen goSearch={goSearch} goDetail={goDetail} goSubscription={goSubscription} activeCategory={activeCategory} setActiveCategory={setActiveCategory} />;
+  else if (screen === "search") content = <SearchScreen goBack={goBackToHome} goDetail={goDetail} />;
+  else if (screen === "detail") content = <DetailScreen product={detailProduct} goBack={() => setScreen(detailProduct && detailProduct.fromApi ? "search" : "home")} />;
+  else if (screen === "alerts") content = <InstallScreen />;
+  else if (screen === "profile") content = <ProfileScreen goSubscription={goSubscription} />;
+  else if (screen === "subscription") content = <Elements stripe={stripePromise}><SubscriptionScreen goBack={goBackToHome} email="provalentin883@gmail.com" /></Elements>;
+  else content = <div />;
+
+  const showNav = screen !== "detail" && screen !== "subscription";
+
+  return (
+    <>
+      <AppShell
+        isMobile={isMobile}
+        footer={showNav ? <BottomNav screen={screen} setScreen={setScreen} isMobile={isMobile} /> : null}
+      >
+        {content}
+      </AppShell>
+      {!isMobile && (
+        <p style={{ marginTop: 24, fontSize: 13, color: "#9B9A93", textAlign: "center", maxWidth: 360, lineHeight: 1.5, fontWeight: 500 }}>
+          Viral Demo — 🔥 Deals, 👀 FOMO, 📤 Native Share, 💳 Stripe Ready & PWA.
+        </p>
+      )}
+    </>
   );
 }
